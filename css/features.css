@@ -1873,7 +1873,11 @@ body.herb-game-active {
   animation: arrowBounceLeft 0.9s ease-in-out infinite;
 }
 .coach-step--right .coach-arrow {
-  animation: arrowBounceRight 0.9s ease-in-out infinite;
+  animation: arrowBounceDown 0.9s ease-in-out infinite;
+}
+@keyframes arrowBounceDown {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(8px); }
 }
 .coach-arrow {
   font-size: 1.8rem;
