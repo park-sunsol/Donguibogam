@@ -2036,22 +2036,56 @@ body.herb-game-active {
   font-size: 0.965rem;
   font-weight: 600;
   color: #ffd76a;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.18em;
+  line-height: 1.9;
   margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  text-align: center;
 }
 .coach-hand-caption::before {
   content: '';
+  display: inline-block;
   width: 7px; height: 7px;
   border-radius: 50%;
   background: #ff4d4d;
   box-shadow: 0 0 8px #ff4d4d;
+  margin-right: 7px;
+  vertical-align: middle;
   animation: coachRecBlink 1.2s ease-in-out infinite;
 }
+/* 카메라 권한 허용 버튼 */
+.coach-cam-btn {
+  margin-top: 4px;
+  background: rgba(255, 215, 106, 0.14);
+  color: #ffd76a;
+  border: 1.5px solid rgba(255, 215, 106, 0.6);
+  padding: 8px 22px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.coach-cam-btn:hover {
+  background: rgba(255, 215, 106, 0.26);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+.coach-cam-status {
+  margin: 0;
+  min-height: 1.1em;
+  max-width: 320px;
+  text-align: center;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+}
+.coach-cam-status--ok { color: #7ee0a0; }
+.coach-cam-status--error { color: #ff9a9a; }
 /* 모바일은 웹캠이 아닌 터치로 진행 → 웹캠 안내 문구 숨김 */
-.herb-game-overlay.mobile-mode .coach-hand-caption { display: none; }
+.herb-game-overlay.mobile-mode .coach-hand-caption,
+.herb-game-overlay.mobile-mode .coach-cam-btn,
+.herb-game-overlay.mobile-mode .coach-cam-status { display: none; }
 @keyframes coachRecBlink {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.25; }

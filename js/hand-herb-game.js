@@ -225,6 +225,9 @@
     var coachCloseBtn = document.getElementById('herb-coach-close');
     if (coachCloseBtn) coachCloseBtn.addEventListener('click', dismissCoach);
 
+    var camPermBtn = document.getElementById('coach-cam-permission-btn');
+    if (camPermBtn) camPermBtn.addEventListener('click', requestCameraPermission);
+
     var pickerCloseBtn = document.getElementById('herb-picker-close');
     if (pickerCloseBtn) pickerCloseBtn.addEventListener('click', closePicker);
 
@@ -269,6 +272,35 @@
   function dismissCoach() {
     var el = document.getElementById('herb-game-coach');
     if (el) el.setAttribute('aria-hidden', 'true');
+  }
+
+  /* 카메라 권한 요청 — 브라우저 권한 프롬프트를 띄우고, 차단 상태면 안내한다.
+     (보안상 웹에서 브라우저 설정 페이지로 직접 이동할 수는 없다.) */
+  function setCamStatus(msg, kind) {
+    var el = document.getElementById('coach-cam-status');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.className = 'coach-cam-status' + (kind ? ' coach-cam-status--' + kind : '');
+  }
+  function requestCameraPermission() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCamStatus('이 브라우저는 카메라 접근을 지원하지 않아요.', 'error');
+      return;
+    }
+    setCamStatus('카메라 권한을 요청하는 중…', null);
+    navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
+      stream.getTracks().forEach(function (t) { t.stop(); }); // 권한 확인용이므로 즉시 정지
+      setCamStatus('카메라 권한이 허용됐어요! 처방하기를 눌러 시작하세요.', 'ok');
+    }).catch(function (err) {
+      var name = err && err.name;
+      if (name === 'NotAllowedError' || name === 'SecurityError') {
+        setCamStatus('카메라가 차단돼 있어요. 주소창 왼쪽 자물쇠(또는 카메라) 아이콘을 눌러 "카메라 허용"으로 바꾼 뒤 새로고침해주세요.', 'error');
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        setCamStatus('연결된 카메라를 찾을 수 없어요.', 'error');
+      } else {
+        setCamStatus('카메라 권한 요청에 실패했어요. 다시 시도해주세요.', 'error');
+      }
+    });
   }
 
   /* ══════════════════════════════════════
