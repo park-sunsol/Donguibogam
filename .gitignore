@@ -5,3 +5,9 @@ effect-herb-tags.json
 
 # macOS
 .DS_Store
+
+# Blender / 에디터 백업 바이너리 (사이트에서 미사용, 로컬에만 보관)
+*.blend
+*.blend1
+*.blend.bak*
+*.glb.bak*
