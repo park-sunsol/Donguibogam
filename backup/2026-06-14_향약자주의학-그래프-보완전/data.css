@@ -1,0 +1,1198 @@
+/* 개요 탭: 검색창 숨김 (목록·처방·효능은 유지) */
+body.view-mode-data .header-search {
+  display: none;
+}
+
+/* 데이터 대시보드 탭(분류) */
+.view-panel.data-view {
+  overflow: visible;
+}
+
+/* 개요 섹션 앵커 내비 — 헤더 아래 sticky 탭 */
+.overview-anchor-nav {
+  position: sticky;
+  top: var(--sticky-filter-top, 0px);
+  z-index: 30;
+  /* 헤더처럼 뷰포트 좌우 끝까지 풀블리드 */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  width: 100vw;
+  background: rgba(248, 246, 240, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rule-1);
+}
+.overview-anchor-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.5rem 1.5rem;
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.overview-anchor-nav-inner::-webkit-scrollbar { display: none; }
+.overview-anchor-link {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.95rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: var(--ink-5);
+  white-space: nowrap;
+  transition: background var(--dur-base), color var(--dur-base), border-color var(--dur-base);
+}
+.overview-anchor-link:hover {
+  background: var(--clay-tint);
+  color: var(--clay-deep);
+}
+.overview-anchor-link.active {
+  background: var(--clay-deep);
+  border-color: var(--clay-deep);
+  color: #fff;
+  font-weight: 600;
+}
+/* 앵커 스크롤 시 sticky 헤더+내비에 가리지 않도록 여백 확보 */
+#ov-dgbg,
+#dashboard-container,
+#rare-herbs-section,
+#endangered-herbs-section,
+#herb-parts-section {
+  scroll-margin-top: calc(var(--sticky-filter-top, 0px) + 4rem);
+}
+@media (max-width: 768px) {
+  .overview-anchor-nav-inner { padding: 0.4rem 1rem; }
+  .overview-anchor-link { padding: 0.4rem 0.8rem; }
+}
+.data-view .view-caption {
+  margin-bottom: 0.5rem;
+  padding-top: 0.75rem;
+}
+.data-view-caption {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: min(100%, 62rem);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #3a3a3a;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1), transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+  overflow: visible;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.data-view-caption.data-view-caption--in {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (min-width: 900px) {
+  .data-view-caption {
+    font-size: 1.15rem;
+    max-width: min(100%, 68rem);
+    white-space: nowrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .data-view-caption {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+}
+
+/* 개요 첫 문구 히어로 밴드 — 충분한 영역 확보 + 배경 글자 연출 */
+.dgbg-overview-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: clamp(12rem, 26vh, 18rem);
+  padding: clamp(3rem, 6vh, 5rem) 1rem clamp(2rem, 4vh, 3rem);
+}
+.dgbg-overview-hero .data-view-caption {
+  position: relative;
+  z-index: 1;
+  padding-top: 0;
+}
+@media (max-width: 640px) {
+  .dgbg-overview-hero {
+    min-height: clamp(9rem, 22vh, 13rem);
+  }
+}
+
+/* ── 개요 탭 공통 캔버스 ──────────────────────────────────
+   동의보감 개요 · 탕액편 약재 분류 · 희귀 약재 31선 · 멸종위기 약재 ·
+   부위별 활용 등 섹션의 헤더/타이틀 타이포그래피를 한 곳에서 관리.
+   카드 테두리·패딩 없이 화면 전체 폭을 사용한다.
+   섹션별 클래스(.rhc-dashboard 등)에는 고유 스타일만 남긴다. */
+.overview-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.overview-card-title {
+  font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.3rem;
+}
+
+.overview-card-subtitle {
+  font-size: 1rem;
+  color: #aaa;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 동의보감 개요 섹션 */
+.dgbg-intro-section {
+  width: 100%;
+  max-width: 1320px;
+  margin: 1rem 0 0.5rem;
+}
+
+.dgbg-intro-hanja {
+  font-weight: 400;
+  color: #888;
+  font-size: 0.78em;
+  letter-spacing: 0.04em;
+  margin-left: 0.3em;
+}
+
+.dgbg-intro-desc {
+  font-size: 1rem; /* 개요 캔버스 본문 공통 크기 */
+  line-height: 1.7;
+  color: #555;
+  margin: 0 0 1.4rem;
+  max-width: 60rem;
+  word-break: keep-all;
+}
+
+/* ── 핵심 수치 스코어카드 (큰 인터랙티브 카드) ── */
+.dgbg-intro-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.9rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dgbg-intro-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: #f7f5f2;
+  border: 1px solid #ece8e2;
+  border-radius: 16px;
+  padding: 1.4rem 1.5rem 1.3rem;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.28s ease,
+              border-color 0.28s ease,
+              background 0.28s ease;
+}
+/* 상단 액센트 바: 평소 숨김 → hover/focus 시 좌→우로 채워짐 */
+.dgbg-intro-stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--clay-deep, #9c5a3c);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dgbg-intro-stat:hover,
+.dgbg-intro-stat:focus-visible {
+  transform: translateY(-5px);
+  border-color: var(--clay-deep, #9c5a3c);
+  background: #fff;
+  box-shadow: 0 14px 30px -10px rgba(60, 40, 25, 0.22);
+  outline: none;
+}
+.dgbg-intro-stat:hover::before,
+.dgbg-intro-stat:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.dgbg-intro-stat-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #999;
+  letter-spacing: 0.01em;
+  order: -1;
+  transition: color 0.28s ease;
+}
+.dgbg-intro-stat:hover .dgbg-intro-stat-label,
+.dgbg-intro-stat:focus-visible .dgbg-intro-stat-label {
+  color: var(--clay-deep, #9c5a3c);
+}
+
+.dgbg-intro-stat-value {
+  font-size: clamp(2rem, 3.6vw, 2.7rem);
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.dgbg-intro-stat-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.dgbg-intro-stat-unit {
+  font-size: 0.42em;
+  font-weight: 600;
+  color: #888;
+  margin-left: 0.25em;
+}
+
+.dgbg-intro-stat-foot {
+  font-size: 0.74rem;
+  color: #b0a99f;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  margin-top: 0.15rem;
+}
+
+/* 모바일 */
+@media (max-width: 768px) {
+  .dgbg-intro-header {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .dgbg-intro-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.7rem;
+  }
+
+  .dgbg-intro-stat {
+    padding: 1.1rem 1.1rem 1rem;
+  }
+}
+
+/* ── 카드 내부 구분선 ────────────────────────── */
+.dgbg-intro-divider {
+  height: 1px;
+  background: #ede9e4;
+  margin: 1.1rem 0;
+}
+
+/* ── 편별 구성 탭 (카드 내부) ───────────────── */
+.dgbg-chapters-tabs {
+  display: flex;
+  border-bottom: 1px solid #ede9e4;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -2.8rem;
+  padding: 0 2.8rem;
+}
+.dgbg-chapters-tabs::-webkit-scrollbar { display: none; }
+
+.dgbg-chapters-tab {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+  padding: 0.5rem 1.1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  margin-bottom: -1px;
+}
+
+.dgbg-chapters-tab:hover .dgbg-chapters-tab-name { color: #1a1a1a; }
+
+.dgbg-chapters-tab.active {
+  border-bottom-color: #1a1a1a;
+}
+
+.dgbg-chapters-tab-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #aaa;
+  letter-spacing: -0.01em;
+  transition: color 0.15s;
+}
+
+.dgbg-chapters-tab-hanja {
+  font-size: 0.68rem;
+  color: #ccc;
+  letter-spacing: 0.04em;
+}
+
+.dgbg-chapters-tab.active .dgbg-chapters-tab-name { color: #1a1a1a; }
+.dgbg-chapters-tab.active .dgbg-chapters-tab-hanja { color: #999; }
+
+.dgbg-chapters-panels {
+  padding-top: 1.1rem;
+}
+
+.dgbg-chapters-panel {
+  display: none;
+}
+
+.dgbg-chapters-panel.active {
+  display: block;
+}
+
+.dgbg-chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 0.6rem;
+}
+
+.dgbg-chapter-icon {
+  font-size: 1.8rem;
+  color: #1a1a1a;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.dgbg-chapter-meta-hanja {
+  font-size: 1rem;
+  color: #666;
+  margin: 0 0 0.2rem;
+  letter-spacing: 0.05em;
+}
+
+.dgbg-chapter-vol {
+  font-size: 0.73rem;
+  color: #aaa;
+  background: #f5f3f0;
+  border-radius: 20px;
+  padding: 0.16rem 0.6rem;
+  display: inline-block;
+  margin: 0;
+}
+
+.dgbg-chapter-desc {
+  font-size: 0.93rem;
+  line-height: 1.75;
+  color: #555;
+  margin: 0;
+  word-break: keep-all;
+}
+
+/* ── 가로 편찬 연혁 타임라인 ─────────────────── */
+.dgbg-htl-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 1rem;
+}
+
+.dgbg-htl-wrapper {
+  /* nothing */
+}
+
+/* 가로 스크롤 트랙 */
+.dgbg-htl-scroll {
+  overflow-x: auto;
+  margin: 0 -2.8rem;
+  padding: 0 2.8rem;
+  scrollbar-width: thin;
+  scrollbar-color: #d8d3cc transparent;
+}
+.dgbg-htl-scroll::-webkit-scrollbar { height: 4px; }
+.dgbg-htl-scroll::-webkit-scrollbar-track { background: transparent; }
+.dgbg-htl-scroll::-webkit-scrollbar-thumb { background: #d8d3cc; border-radius: 2px; }
+
+.dgbg-htl-track {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  padding-bottom: 0.5rem;
+  min-width: max-content;
+}
+
+/* 가로 연결선 */
+.dgbg-htl-track::before {
+  content: '';
+  position: absolute;
+  top: calc(1.3rem + 5px); /* year height + dot center */
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #e8e4de;
+  z-index: 0;
+}
+
+.dgbg-htl-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 90px;
+  max-width: 110px;
+  padding: 0 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.dgbg-htl-node-year {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #bbb;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.45rem;
+  white-space: nowrap;
+}
+
+.dgbg-htl-node-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #ccc;
+  box-sizing: border-box;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  flex-shrink: 0;
+  margin-bottom: 0.5rem;
+}
+
+.dgbg-htl-node-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #aaa;
+  line-height: 1.35;
+  word-break: keep-all;
+  transition: color 0.15s;
+}
+
+/* 주요 이벤트 노드 */
+.dgbg-htl-node--key .dgbg-htl-node-dot {
+  width: 12px;
+  height: 12px;
+  border-color: #1a1a1a;
+}
+.dgbg-htl-node--key .dgbg-htl-node-year { color: #888; }
+.dgbg-htl-node--key .dgbg-htl-node-title { color: #555; font-weight: 600; }
+
+/* 분기 노드 */
+.dgbg-htl-node--branch .dgbg-htl-node-dot {
+  border-color: #999;
+  background: #f5f3f0;
+}
+
+/* 활성 상태 */
+.dgbg-htl-node.active .dgbg-htl-node-dot {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+  transform: scale(1.3);
+}
+.dgbg-htl-node.active .dgbg-htl-node-year { color: #555; }
+.dgbg-htl-node.active .dgbg-htl-node-title { color: #1a1a1a; font-weight: 700; }
+
+.dgbg-htl-node:hover .dgbg-htl-node-dot { border-color: #888; }
+.dgbg-htl-node:hover .dgbg-htl-node-title { color: #555; }
+
+/* 상세 패널 */
+.dgbg-htl-details {
+  margin-top: 1rem;
+  min-height: 3rem;
+}
+
+.dgbg-htl-detail {
+  display: none;
+}
+
+.dgbg-htl-detail.active {
+  display: block;
+  animation: htl-fade 0.2s ease;
+}
+
+@keyframes htl-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dgbg-htl-detail-desc {
+  font-size: 0.88rem;
+  line-height: 1.72;
+  color: #666;
+  margin: 0 0 1rem;
+  word-break: keep-all;
+  max-width: 64rem;
+}
+
+/* 분기 영역 (일본·중국) */
+.dgbg-tl-branches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.dgbg-tl-branch-track {
+  border-radius: 10px;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid;
+}
+
+.dgbg-tl-branch-track--japan {
+  border-color: #f0c9bb;
+  background: #fdf4f1;
+}
+
+.dgbg-tl-branch-track--china {
+  border-color: #a8dcc9;
+  background: #f0faf5;
+}
+
+.dgbg-tl-branch-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+
+.dgbg-tl-branch-track--japan .dgbg-tl-branch-label { color: #D85A30; }
+.dgbg-tl-branch-track--china .dgbg-tl-branch-label { color: #1D9E75; }
+
+.dgbg-tl-branch-entry {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.dgbg-tl-branch-entry:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.dgbg-tl-branch-year {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #999;
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.01em;
+}
+
+.dgbg-tl-branch-body {
+  font-size: 0.83rem;
+  line-height: 1.68;
+  color: #555;
+  margin: 0;
+  word-break: keep-all;
+}
+
+.dgbg-tl-branch-quote {
+  font-size: 0.79rem;
+  font-style: italic;
+  color: #888;
+  margin: 0.4rem 0 0;
+  padding-left: 0.75rem;
+  border-left: 2px solid #ccc;
+  word-break: keep-all;
+}
+
+@media (max-width: 768px) {
+  .dgbg-chapters-tabs { margin: 0 -1.2rem; padding: 0 1.2rem; }
+  .dgbg-htl-scroll { margin: 0 -1.2rem; padding: 0 1.2rem; }
+  .dgbg-tl-branches { grid-template-columns: 1fr; }
+}
+
+/* ────────────────────────────────────────────── */
+
+.dashboard-container {
+  max-width: 1320px;
+  width: 100%;
+  overflow: visible;
+}
+.special-herbs-intro {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: #555;
+  margin: 0.35rem 0 1.1rem;
+  max-width: 52rem;
+}
+.dashboard-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  overflow: visible;
+  width: 100%;
+}
+.dashboard-chart-block {
+  overflow: visible;
+}
+
+.dashboard-sunburst-block {
+  grid-column: 1 / -1;
+  overflow: visible;
+}
+.dashboard-sunburst-wrap {
+  position: relative;
+  min-height: 0;
+  overflow: visible;
+}
+.dashboard-sunburst-stage {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+}
+.dashboard-sunburst-wrap--treemap .dashboard-sunburst-svg-host {
+  display: none !important;
+}
+.dashboard-sunburst-treemap {
+  display: none;
+  width: 100%;
+  max-width: min(100%, 1180px);
+  margin: 0 auto;
+}
+.dashboard-sunburst-wrap--treemap .dashboard-sunburst-treemap {
+  display: block;
+  padding-top: 2.8rem;
+  animation: dashboardTreemapUnfold 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes dashboardTreemapUnfold {
+  from {
+    opacity: 0.4;
+    transform: scale(0.93);
+    transform-origin: center top;
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-sunburst-wrap--treemap .dashboard-sunburst-treemap {
+    animation: none;
+  }
+}
+.dashboard-treemap-head {
+  font-size: clamp(1.05rem, 2.2vw, 1.3rem); /* .overview-card-title 과 동일 */
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 0 0 0.45rem;
+  letter-spacing: -0.02em;
+  text-align: center;
+  padding: 0 3rem;
+}
+.dashboard-treemap-svg {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.07);
+}
+.dashboard-sunburst-back-btn {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 20;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 1px solid #333;
+  border-radius: 12px;
+  background: #000;
+  color: #fff;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.dashboard-sunburst-back-btn:hover {
+  background: #222;
+  border-color: #444;
+}
+.dashboard-sunburst-back-btn[aria-hidden="true"] {
+  display: none;
+}
+.dashboard-sunburst {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0.25rem 0 0.35rem;
+  min-height: 0;
+  overflow: visible;
+}
+.dashboard-sunburst svg {
+  width: 100%;
+  max-width: min(100%, min(1180px, 92vw));
+  height: auto;
+  overflow: visible;
+  display: block;
+}
+.dashboard-sunburst-hint {
+  margin: 0.5rem 0 0;
+  font-size: 1rem; /* 개요 캔버스 본문 공통 크기 */
+  color: #777;
+  text-align: center;
+}
+.data-view-sources {
+  margin-top: 2.5rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid #e5e2dc;
+  max-width: 1320px;
+  width: 100%;
+  overflow: visible;
+}
+.data-view-sources-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem 2.5rem;
+  align-items: start;
+}
+.data-view-sources-col {
+  min-width: 0;
+}
+.data-view-sources-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.63rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.data-view-sources-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.data-view-sources-link {
+  font-size: 0.81rem;
+  line-height: 1.55;
+  color: #1a5f4a;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.data-view-sources-link:hover {
+  color: #0d3d2e;
+}
+.data-view-sources-cite {
+  font-size: 0.81rem;
+  line-height: 1.55;
+  color: #555;
+}
+.data-view-tools-line {
+  margin: 0;
+  font-size: 0.81rem;
+  line-height: 1.55;
+  color: #555;
+}
+/* 출처 영역 하단 서명 — 동·의·보·감 lottie 드로온 (그라데이션 라인이 써짐)
+   배경 없이 화면 전체 폭을 채운다 (풀블리드) */
+.data-view-sign {
+  position: relative;
+  margin-top: 2.5rem;
+  padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 4vw, 4rem) clamp(0.25rem, 0.8vw, 0.6rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.6rem, 3vw, 2.4rem);
+  /* 컨테이너 자체를 뷰포트 좌우 끝까지 풀블리드 */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  width: 100vw;
+  box-sizing: border-box;
+  opacity: 0.6;
+}
+.dgbg-sign-char {
+  /* 4글자가 화면 전체 폭을 채우도록 뷰포트 기준 크기 */
+  height: clamp(7rem, 18vw, 16rem);
+  aspect-ratio: var(--ar, 1 / 1);
+  flex: 0 1 auto;
+  min-width: 0;
+  opacity: 0.4;
+  /* lottie 캔버스(viewBox)보다 살짝 넘치는 획이 잘리지 않도록 */
+  overflow: visible;
+}
+.dgbg-sign-char svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: visible !important;
+}
+@media (max-width: 640px) {
+  .data-view-sign {
+    gap: 0.4rem;
+    padding: 1.6rem 0 0.4rem;
+  }
+  .dgbg-sign-char {
+    height: clamp(4.5rem, 19vw, 9rem);
+  }
+}
+.special-herbs-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e2dc;
+}
+.special-herbs-title {
+  margin: 0 0 1rem;
+  font-size: 1.22rem;
+  font-weight: 600;
+  color: #333;
+}
+.special-herbs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.special-herbs-group {
+  background: transparent;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e8e6e2;
+}
+.special-herbs-group-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: #555;
+}
+.special-herbs-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.special-herb-btn {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.95rem;
+  border: 1px solid #c5c2bc;
+  border-radius: 6px;
+  background: transparent;
+  color: #444;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.special-herb-btn:hover {
+  background: rgba(240, 237, 232, 0.5);
+  border-color: #a5a29c;
+  color: #2d5a2d;
+}
+.special-herbs-empty {
+  margin: 0;
+  padding: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* 개요(데이터) 탭 — 모바일: 전반적으로 글자·여백 축소 */
+@media (max-width: 768px) {
+  .view-panel.data-view .view-caption {
+    margin-bottom: 0.85rem;
+    padding-top: 0.65rem;
+  }
+  .view-panel.data-view .data-view-caption {
+    font-size: 1.02rem;
+    line-height: 1.58;
+  }
+  .view-panel.data-view .special-herbs-intro {
+    font-size: 0.86rem;
+    line-height: 1.55;
+    margin-bottom: 0.85rem;
+  }
+  .view-panel.data-view .dashboard-container {
+    margin-top: 0;
+  }
+  .view-panel.data-view .dashboard-charts {
+    gap: 1rem;
+    margin-bottom: 1.35rem;
+  }
+  .view-panel.data-view .dashboard-sunburst-wrap {
+    min-height: 0;
+  }
+  .view-panel.data-view .dashboard-sunburst {
+    min-height: 0;
+    padding: 0.2rem 0 0.35rem;
+  }
+  .view-panel.data-view .dashboard-sunburst-back-btn {
+    font-size: 0.82rem;
+    min-height: 30px;
+    padding: 0 0.4rem;
+  }
+  .view-panel.data-view .dashboard-sunburst-hint {
+    font-size: 0.78rem;
+    margin-top: 0.35rem;
+    line-height: 1.45;
+  }
+  .view-panel.data-view .data-view-sources {
+    margin-top: 1.75rem;
+    padding-top: 1.1rem;
+  }
+  .view-panel.data-view .data-view-sources-title {
+    font-size: 0.47rem;
+    margin-bottom: 0.5rem;
+  }
+  .view-panel.data-view .data-view-sources-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .view-panel.data-view .data-view-sources-list {
+    gap: 0.35rem;
+  }
+  .view-panel.data-view .data-view-sources-link {
+    font-size: 0.65rem;
+  }
+  .view-panel.data-view .data-view-tools-line {
+    font-size: 0.65rem;
+    line-height: 1.45;
+  }
+  .view-panel.data-view .special-herbs-section {
+    margin-top: 1.35rem;
+    padding-top: 1.1rem;
+  }
+  .view-panel.data-view .special-herbs-title {
+    font-size: 1.02rem;
+    margin-bottom: 0.65rem;
+  }
+  .view-panel.data-view .special-herbs-group {
+    padding: 0.7rem 0.85rem;
+    border-radius: 8px;
+  }
+  .view-panel.data-view .special-herbs-group-title {
+    font-size: 0.88rem;
+    margin-bottom: 0.55rem;
+  }
+  .view-panel.data-view .special-herb-btn {
+    font-size: 0.8rem;
+    padding: 0.28rem 0.5rem;
+  }
+  .view-panel.data-view .special-herbs-empty {
+    font-size: 0.8rem;
+    padding: 0.75rem;
+  }
+}
+
+/* ============================================================
+   개요 탭 — 섹션별 풀스크린 스냅 스크롤
+   각 영역을 한 화면 높이로 채우고, 스크롤하면 다음 섹션 시작점으로
+   부드럽게 스르륵 안착(scroll-snap). 개요 탭이 활성일 때만 적용.
+   --header-h 는 index.html 인라인 스크립트가 sticky 헤더 실제 높이로 설정.
+   ============================================================ */
+html:has(#data-view[aria-hidden="false"]) {
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: var(--header-h, 88px);
+  scroll-behavior: smooth;
+}
+
+#data-view[aria-hidden="false"] > .dgbg-overview-hero,
+#data-view[aria-hidden="false"] > .dgbg-intro-section,
+#data-view[aria-hidden="false"] > .dashboard-container,
+#data-view[aria-hidden="false"] > .rare-herbs-section,
+#data-view[aria-hidden="false"] > .endangered-herbs-section,
+#data-view[aria-hidden="false"] > .herb-parts-section,
+#data-view[aria-hidden="false"] > .data-view-sources {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;          /* 한 번의 스크롤에 한 섹션씩만 넘어감 */
+  scroll-margin-top: var(--header-h, 88px);
+  /* 각 섹션을 정확히 한 화면 높이로 고정 */
+  height: calc(100vh - var(--header-h, 88px));
+  height: calc(100svh - var(--header-h, 88px));
+  /* 콘텐츠가 짧으면 세로 가운데, 한 화면을 넘기면 위부터(safe) + 내부 스크롤.
+     mandatory 스냅이 긴 섹션에서 갇히지 않게 하는 안전장치 */
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  overflow-y: auto;
+}
+
+/* 출처 영역(참고자료·리소스·Tools)은 세로 가운데가 아니라 상단 정렬 */
+#data-view[aria-hidden="false"] > .data-view-sources {
+  justify-content: flex-start;
+}
+
+/* 희귀약재 섹션: overflow-y:auto가 overflow-x까지 auto로 강제해
+   캐러셀(.rhc-scene)의 100vw 풀블리드가 섹션 폭에서 잘리므로 클리핑 해제.
+   이 섹션은 콘텐츠가 한 화면 안에 들어와 내부 스크롤 안전장치가 불필요하다 */
+#data-view[aria-hidden="false"] > .rare-herbs-section {
+  overflow-y: visible;
+  /* 콘텐츠를 세로 가운데가 아닌 위쪽에 정렬 — 타이틀 위 빈 공간 제거 */
+  justify-content: flex-start;
+  padding-top: clamp(1rem, 3vh, 2.2rem);
+}
+
+/* 쓰임새(부위별 활용) 섹션: 다른 섹션은 타이틀이 상단에 오는데 이 섹션만
+   기본값 safe center 로 타이틀이 화면 가운데에 떠 있었다. 다른 섹션과 동일하게
+   상단 정렬로 맞추고, 가운데 정렬로 비어 있던 아래 공간만큼 3D 콘텐츠를 키운다 */
+#data-view[aria-hidden="false"] > .herb-parts-section {
+  justify-content: flex-start;
+  padding-top: clamp(0.8rem, 2.4vh, 1.8rem);
+}
+#data-view[aria-hidden="false"] > .herb-parts-section .herb-parts-dashboard,
+#data-view[aria-hidden="false"] > .herb-parts-section .herb-parts-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+/* 무대(3D+설명)를 한 화면에 맞춘 고정 높이로 두어, 제목·무대·하단 레일이
+   모두 한 화면에 들어오게 한다. 캔버스는 무대 높이를 채우고, 우측 정보열은
+   고정 높이 안에서 처리된다 */
+#data-view[aria-hidden="false"] > .herb-parts-section .lotus-stage {
+  height: clamp(340px, 56vh, 600px);
+  flex: 0 0 auto;
+  min-height: 0;
+}
+#data-view[aria-hidden="false"] > .herb-parts-section .lotus-canvas-wrap {
+  min-height: 0;
+}
+#data-view[aria-hidden="false"] > .herb-parts-section .lotus-info {
+  min-height: 0;
+}
+/* 상세 패널(상세 3D + 두 갈래 설명)은 무대 높이보다 작게 */
+#data-view[aria-hidden="false"] > .herb-parts-section .lotus-detail {
+  height: clamp(300px, 50vh, 520px);
+  margin: 0;
+}
+/* 하단 레일을 압축해 한 화면에 */
+#data-view[aria-hidden="false"] > .herb-parts-section .lotus-rail {
+  flex: 0 0 auto;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+}
+
+/* 모션 감소 요청 시 부드러운 스크롤만 즉시 이동으로(스냅은 유지) */
+@media (prefers-reduced-motion: reduce) {
+  html:has(#data-view[aria-hidden="false"]) {
+    scroll-behavior: auto;
+  }
+}
+
+/* ── 긴 섹션 콘텐츠 높이 축소: 한 화면 안에 들어오도록 여백·간격 압축 ── */
+#data-view[aria-hidden="false"] .overview-card-header {
+  margin-bottom: 0.4rem;
+}
+#data-view[aria-hidden="false"] .dgbg-intro-section {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+#data-view[aria-hidden="false"] .dgbg-intro-desc {
+  margin: 0 0 1.1rem;
+  line-height: 1.6;
+}
+#data-view[aria-hidden="false"] .dgbg-intro-stat {
+  padding: 1.1rem 1.3rem 1rem;
+}
+#data-view[aria-hidden="false"] .dgbg-intro-divider {
+  margin: 0.9rem 0;
+}
+#data-view[aria-hidden="false"] .dgbg-chapters-panels {
+  padding-top: 0.9rem;
+}
+#data-view[aria-hidden="false"] .dgbg-chapter-desc {
+  line-height: 1.6;
+}
+#data-view[aria-hidden="false"] .dgbg-htl-section-title {
+  margin-bottom: 0.8rem;
+}
+#data-view[aria-hidden="false"] .dgbg-htl-details {
+  margin-top: 0.9rem;
+}
+/* 연혁 노드의 상세(특히 일본·중국 전파 분기)가 길어도 섹션을 밀어내지 않도록
+   상세 영역만 내부 스크롤로 가둠 */
+#data-view[aria-hidden="false"] .dgbg-htl-detail.active:has(.dgbg-tl-branches) {
+  max-height: 34vh;
+  overflow-y: auto;
+  padding-right: 0.4rem;
+}
+
+/* 1) 진입 시 첫 화면(히어로)을 한 화면보다 살짝 낮춰, 아래 '동의보감 개요'
+   카드가 화면 하단에 빼꼼 보이게 → 아래에 콘텐츠가 더 있음을 인지시킴 */
+#data-view[aria-hidden="false"] > .dgbg-overview-hero {
+  height: calc((100svh - var(--header-h, 88px)) * 0.8);
+}
+
+/* 2) 분류 도표(선버스트) 키우기 — 차트 주변 여백을 줄이고 높이 상한을 넉넉히 */
+#data-view[aria-hidden="false"] .dashboard-charts {
+  margin-bottom: 0;
+}
+#data-view[aria-hidden="false"] .dashboard-sunburst-hint {
+  margin-top: 0.3rem;
+}
+#data-view[aria-hidden="false"] .dashboard-sunburst svg,
+#data-view[aria-hidden="false"] .dashboard-treemap-svg {
+  max-height: calc(100svh - var(--header-h, 88px) - 7rem);
+  max-width: min(100%, min(1320px, 96vw));
+}
+
+/* 3) 멸종위기 약재 — 잘라내거나 스크롤하지 않고, 콘텐츠 자체를 줄여 한 화면에 맞춤 */
+/* 콘텐츠(지도+패널)가 한 화면보다 짧아 기본값 justify-content: safe center 로
+   세로 가운데 정렬되면서 타이틀 위에 큰 여백이 생긴다. 스냅 시작점(섹션 상단)에
+   타이틀이 가깝게 오도록 위 정렬로 바꾸고 상단 여백만 약간 둔다. */
+#data-view[aria-hidden="false"] > .endangered-herbs-section {
+  justify-content: flex-start;
+  padding-top: 1.5rem;
+}
+#data-view[aria-hidden="false"] .endangered-section {
+  margin: 0;
+}
+#data-view[aria-hidden="false"] .endangered-body {
+  gap: 1.2rem;
+}
+/* 지도가 세로로 가장 길어 전체 높이를 좌우 → 높이를 한 화면에 맞춰 비례 축소.
+   서브카피(약 1.3rem) 추가분만큼 예약 높이를 늘려 지도가 밀리지 않게 한다. */
+#data-view[aria-hidden="false"] .endangered-map-svg {
+  max-height: calc(100svh - var(--header-h, 88px) - 12.5rem);
+}
+#data-view[aria-hidden="false"] .endangered-legend {
+  margin-top: 0.5rem;
+}
+/* 우측 정보 패널(지역선택 + 리스트)을 살짝 위로 올리고,
+   리스트 높이를 지도에 맞춰 늘려 더 많은 약재가 보이게 한다. */
+#data-view[aria-hidden="false"] .endangered-info-panel {
+  margin-top: -0.75rem;
+}
+#data-view[aria-hidden="false"] .endangered-region-filters {
+  margin-bottom: 0.5rem;
+}
+#data-view[aria-hidden="false"] .endangered-herb-list-wrap {
+  margin-top: 0.4rem;
+}
+#data-view[aria-hidden="false"] .endangered-herb-list {
+  max-height: calc(100svh - var(--header-h, 88px) - 15rem);
+}
+#data-view[aria-hidden="false"] .endangered-info-placeholder {
+  padding: 1.6rem 1rem;
+}
+

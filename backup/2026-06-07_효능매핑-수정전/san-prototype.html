@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>산(散) — 빻고 붓기 프로토타입</title>
+<style>
+  :root {
+    --paper: #f1e7d0;
+    --ink:   #2a1b0a;
+    --gold:  #c89542;
+    --accent:#8a1f15;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    color: var(--ink); background: #0a0604; overflow: hidden; user-select: none;
+  }
+  .scene { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+  #bg-video {
+    position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px;
+    opacity: 0; pointer-events: none;
+  }
+  #bg-canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0;
+    background: #1a0e04;
+  }
+  .vignette {
+    position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.35) 100%);
+  }
+
+  #fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
+
+  #video {
+    position: absolute; right: 16px; bottom: 16px;
+    width: 160px; height: 90px; object-fit: cover;
+    transform: scaleX(-1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    opacity: 0.5; z-index: 5;
+  }
+
+  .scroll {
+    position: absolute; top: 28px; right: 200px;
+    width: 280px; padding: 14px 22px;
+    background: var(--paper);
+    background-image: repeating-linear-gradient(180deg, rgba(0,0,0,0.04) 0 1px, transparent 1px 22px);
+    border: 1px solid #b9a572;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.65);
+    text-align: center; z-index: 4;
+  }
+  .scroll-title { margin: 0 0 4px; font-size: 18px; letter-spacing: 6px; color: var(--accent); font-weight: 600; }
+  .scroll-sub { margin: 0; font-size: 12px; color: #6a4a28; letter-spacing: 2px; }
+
+  .hud {
+    position: absolute; top: 16px; left: 16px;
+    background: rgba(0,0,0,0.55); color: var(--paper);
+    padding: 8px 14px; border-radius: 4px; font-size: 12px;
+    letter-spacing: 2px; z-index: 7;
+  }
+  .reset-btn {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(255,255,255,0.12); color: var(--paper); border: 1px solid rgba(255,255,255,0.2);
+    padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;
+    letter-spacing: 2px; z-index: 7;
+  }
+
+  .guide-pound {
+    position: absolute; left: 35%; top: 55%; transform: translate(-50%, -50%);
+    width: 180px; height: 180px; pointer-events: none; z-index: 2;
+    opacity: 0.5;
+  }
+  .guide-pound svg { width: 100%; height: 100%; }
+  .guide-pound.hidden { opacity: 0; }
+  @keyframes poundBob {
+    0%, 100% { transform: translateY(-10px); }
+    50%      { transform: translateY(10px); }
+  }
+  .pound-arrow { animation: poundBob 1.2s ease-in-out infinite; transform-origin: center; }
+
+  .guide-pour {
+    position: absolute; left: 50%; top: 55%; transform: translate(-50%, -50%);
+    width: 60%; height: 100px; pointer-events: none; z-index: 2;
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .guide-pour.show { opacity: 0.6; }
+  .guide-pour svg { width: 100%; height: 100%; }
+  @keyframes pourSlide {
+    0%   { transform: translateX(-30px); opacity: 0.3; }
+    50%  { opacity: 0.95; }
+    100% { transform: translateX(30px); opacity: 0.3; }
+  }
+  .pour-arrow { animation: pourSlide 1.6s ease-in-out infinite; }
+
+  .progress-wrap {
+    position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%);
+    width: 380px; z-index: 7; pointer-events: none;
+    color: rgba(255,235,200,0.95); text-align: center;
+  }
+  .progress {
+    width: 100%; height: 6px; background: rgba(0,0,0,0.55);
+    border-radius: 3px; overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+  }
+  .progress > div { height: 100%; width: 0%; background: var(--gold); transition: width 0.15s; }
+  .hint {
+    margin-top: 14px; font-size: 13px; letter-spacing: 1px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  }
+
+  .result {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.75);
+    display: none; align-items: center; justify-content: center; z-index: 10;
+  }
+  .result.show { display: flex; }
+  .result-card {
+    width: 360px; padding: 36px 28px;
+    background: var(--paper); border: 1px solid #b9a572;
+    text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  }
+  .result-title { margin: 0 0 8px; font-size: 22px; color: var(--accent); letter-spacing: 4px; font-weight: 600; }
+  .result-sub { margin: 0 0 24px; font-size: 13px; color: #6a4a28; }
+  .result-stars { font-size: 32px; color: var(--gold); margin-bottom: 16px; letter-spacing: 6px; }
+  .result-btn { padding: 10px 30px; border: none; background: var(--accent); color: #fff;
+                font-size: 14px; letter-spacing: 4px; cursor: pointer; border-radius: 4px; }
+
+  .splash {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.88);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 20; color: var(--paper); text-align: center; padding: 40px;
+  }
+  .splash h1 { font-size: 28px; letter-spacing: 8px; color: var(--accent); margin: 0 0 12px; }
+  .splash p { max-width: 520px; line-height: 1.7; opacity: 0.85; margin: 4px 0; font-size: 14px; }
+  .splash button {
+    margin-top: 28px; padding: 14px 40px; background: var(--accent); color: #fff;
+    border: none; font-size: 15px; letter-spacing: 6px; cursor: pointer; border-radius: 4px;
+  }
+  .splash.gone { display: none; }
+</style>
+</head>
+<body>
+<div class="scene">
+
+  <video id="bg-video" muted playsinline preload="auto" crossorigin="anonymous">
+    <source src="asset/prescription/san_background.mp4" type="video/mp4">
+  </video>
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette"></div>
+
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="fx"></canvas>
+
+  <div class="scroll">
+    <p class="scroll-title">平胃散</p>
+    <p class="scroll-sub">평위산 · 약재를 빻아 한지에 옮기세요</p>
+  </div>
+
+  <div class="hud">진행 <span id="hud">빻기 0 / 3</span></div>
+  <button class="reset-btn" id="reset-btn">다시</button>
+
+  <div class="guide-pound" id="guide-pound">
+    <svg viewBox="0 0 100 140">
+      <g class="pound-arrow" fill="rgba(255,220,140,0.9)" stroke="rgba(255,220,140,0.5)" stroke-width="1.5">
+        <polygon points="50,10 70,40 58,40 58,90 42,90 42,40 30,40" />
+        <polygon points="50,130 30,100 42,100 42,90 58,90 58,100 70,100" />
+      </g>
+    </svg>
+  </div>
+
+  <div class="guide-pour" id="guide-pour">
+    <svg viewBox="0 0 300 100" preserveAspectRatio="none">
+      <g class="pour-arrow">
+        <line x1="40" y1="50" x2="240" y2="50" stroke="rgba(255,220,140,0.85)" stroke-width="3" stroke-dasharray="8 8" stroke-linecap="round" />
+        <polygon points="240,30 280,50 240,70" fill="rgba(255,220,140,0.85)" />
+      </g>
+    </svg>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress"><div id="progress"></div></div>
+    <p class="hint" id="hint">절구 위에서 주먹을 위아래로 움직여 약재를 빻으세요</p>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-card">
+      <p class="result-title">平胃散 完成</p>
+      <p class="result-sub">평위산이 완성되었습니다</p>
+      <div class="result-stars" id="result-stars">★ ★ ★</div>
+      <button class="result-btn" id="result-btn">다시 만들기</button>
+    </div>
+  </div>
+
+  <div class="splash" id="splash">
+    <h1>散</h1>
+    <p>웹캠 앞에서 손을 움직여 평위산을 직접 만들어보세요.</p>
+    <p>① 절구 위에서 <b>주먹을 쥐고 빠르게 위아래로</b> 3번 빻아 가루를 만들고,<br>② 손을 <b>왼쪽에서 오른쪽으로</b> 옮겨 절구를 기울여 한지에 부으세요.</p>
+    <p id="loading-status" style="margin-top:18px; font-size:12px; opacity:0.6;">프레임 준비 중…</p>
+    <button id="splash-btn" disabled style="opacity:0.4; cursor:not-allowed;">시작</button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js"></script>
+<script>
+(function () {
+  const POUND_REQUIRED = 3;          // 빻기 영상 3번 반복
+  const SWINGS_PER_POUND = 3;        // 한 번의 찧기 = 3번의 빠른 스윙
+  const POUND_PORTION = 0.52;        // 영상 앞 52% = 빻기 구간
+  const POUR_X_START = 0.15;
+  const POUR_X_END   = 0.85;
+  const POUR_LERP    = 0.04;          // 손이 빠르게 움직여도 영상은 천천히 따라감
+
+  const bg = document.getElementById('bg-video');
+  const bgCanvas = document.getElementById('bg-canvas');
+  const bgCtx = bgCanvas.getContext('2d');
+  const video = document.getElementById('video');
+  const fx = document.getElementById('fx');
+  const fxCtx = fx.getContext('2d');
+  const loadingStatus = document.getElementById('loading-status');
+  const splash = document.getElementById('splash');
+  const splashBtn = document.getElementById('splash-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const result = document.getElementById('result');
+  const stars = document.getElementById('result-stars');
+  const hud = document.getElementById('hud');
+  const progress = document.getElementById('progress');
+  const guidePound = document.getElementById('guide-pound');
+  const guidePour = document.getElementById('guide-pour');
+  const hintEl = document.getElementById('hint');
+
+  let frameCache = [];
+  let frameTimes = [];
+  let currentFrameIdx = 0;
+  let framesReady = false;
+
+  function resizeFx() {
+    fx.width = window.innerWidth; fx.height = window.innerHeight;
+    bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
+    drawBgFrame();
+  }
+  window.addEventListener('resize', resizeFx); resizeFx();
+
+  const MAX_FRAMES = 70;
+
+  let phase = 'pound';            // 'pound' | 'pour' | 'done'
+  let poundCount = 0;
+  let swingCount = 0;             // 현재 찧기 사이클 내 스윙 (0~SWINGS_PER_POUND)
+  let pourProgress = 0;           // 실제 진행도 (스무딩)
+  let pourTarget = 0;             // 손 위치에서 결정된 목표값
+  let pourStartedX = null;
+  let qualityAccum = 0;
+
+  let lastFistY = null;
+  let fistDir = 0;
+  let dirChangeY = null;
+  let lastPoundT = 0;
+  let fistGrace = 0;
+  let lostFrames = 0;
+
+  let handPos = null;
+  let handLandmarks = null;
+  const HAND_BONES = [
+    [0,1],[1,2],[2,3],[3,4],
+    [0,5],[5,6],[6,7],[7,8],
+    [5,9],[9,10],[10,11],[11,12],
+    [9,13],[13,14],[14,15],[15,16],
+    [13,17],[17,18],[18,19],[19,20],
+    [0,17]
+  ];
+  const JOINT_SIZE = {
+    0: 5,
+    1: 2.5, 2: 2.5, 3: 2.5, 4: 3.5,
+    5: 3.5, 6: 2.5, 7: 2.5, 8: 3.5,
+    9: 3.5, 10: 2.5, 11: 2.5, 12: 3,
+    13: 3.5, 14: 2.5, 15: 2.5, 16: 3,
+    17: 3.5, 18: 2.5, 19: 2.5, 20: 3
+  };
+  let bgDuration = 5;
+
+  async function preloadFrames() {
+    await new Promise(res => {
+      if (bg.readyState >= 2) return res();
+      bg.addEventListener('loadeddata', res, { once: true });
+    });
+    bgDuration = bg.duration || 5;
+
+    const off = document.createElement('canvas');
+    off.width = bg.videoWidth;
+    off.height = bg.videoHeight;
+    const offCtx = off.getContext('2d');
+
+    const captured = [];
+    const useRvfc = typeof bg.requestVideoFrameCallback === 'function';
+
+    function snapshot(time) {
+      offCtx.drawImage(bg, 0, 0);
+      const snap = document.createElement('canvas');
+      snap.width = off.width; snap.height = off.height;
+      snap.getContext('2d').drawImage(off, 0, 0);
+      captured.push({ time, snap });
+      loadingStatus.textContent = `프레임 준비 중… ${captured.length}`;
+    }
+
+    bg.muted = true;
+    bg.playbackRate = 2;
+    bg.currentTime = 0;
+
+    await new Promise((resolve) => {
+      let finished = false;
+      function finish() { if (finished) return; finished = true; resolve(); }
+      bg.addEventListener('ended', finish, { once: true });
+
+      if (useRvfc) {
+        function onFrame(now, meta) {
+          snapshot(meta.mediaTime);
+          if (!bg.ended && !finished) bg.requestVideoFrameCallback(onFrame);
+        }
+        bg.requestVideoFrameCallback(onFrame);
+      } else {
+        function loop() {
+          if (finished) return;
+          snapshot(bg.currentTime);
+          if (!bg.ended) requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+      }
+      bg.play().catch(finish);
+      setTimeout(finish, (bgDuration / bg.playbackRate) * 1000 + 1500);
+    });
+
+    bg.pause();
+    bg.currentTime = 0;
+    bg.playbackRate = 1;
+
+    captured.sort((a, b) => a.time - b.time);
+
+    let downsampled = captured;
+    if (captured.length > MAX_FRAMES) {
+      downsampled = [];
+      for (let i = 0; i < MAX_FRAMES; i++) {
+        const src = Math.round((i / (MAX_FRAMES - 1)) * (captured.length - 1));
+        downsampled.push(captured[src]);
+      }
+    }
+    frameCache = downsampled.map(c => c.snap);
+    frameTimes = downsampled.map(c => c.time);
+
+    framesReady = true;
+    loadingStatus.textContent = `준비 완료 (${frameCache.length} 프레임)`;
+    splashBtn.disabled = false;
+    splashBtn.style.opacity = '1';
+    splashBtn.style.cursor = 'pointer';
+    drawBgFrame();
+  }
+
+  function drawBgFrame() {
+    if (!framesReady) {
+      bgCtx.fillStyle = '#1a0e04';
+      bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+      return;
+    }
+    const img = frameCache[currentFrameIdx];
+    if (!img) return;
+    const cw = bgCanvas.width, ch = bgCanvas.height;
+    const iw = img.width, ih = img.height;
+    const scale = Math.max(cw / iw, ch / ih);
+    const dw = iw * scale, dh = ih * scale;
+    const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
+    bgCtx.clearRect(0, 0, cw, ch);
+    bgCtx.drawImage(img, dx, dy, dw, dh);
+  }
+
+  function totalRatio() {
+    if (phase === 'pound') {
+      /* 매 찧기마다 빻기 영상을 0 → POUND_PORTION 으로 재생 반복 */
+      const within = Math.min(1, swingCount / SWINGS_PER_POUND);
+      return within * POUND_PORTION;
+    }
+    if (phase === 'pour') {
+      return POUND_PORTION + Math.min(1, pourProgress) * (1 - POUND_PORTION);
+    }
+    return 1;
+  }
+
+  function updateProgress() {
+    const pct = Math.min(100, totalRatio() * 100);
+    progress.style.width = pct + '%';
+    if (phase === 'pound') {
+      hud.textContent = `빻기 ${poundCount} / ${POUND_REQUIRED} (${swingCount}/${SWINGS_PER_POUND})`;
+    } else if (phase === 'pour') {
+      hud.textContent = `붓기 ${Math.round(Math.min(1,pourProgress)*100)}%`;
+    } else {
+      hud.textContent = '완성';
+    }
+  }
+
+  function updateBgScrub() {
+    if (!framesReady) return;
+    const n = frameCache.length;
+    if (n === 0) return;
+    const ratio = Math.max(0, Math.min(1, totalRatio()));
+    const idx = Math.min(n - 1, Math.floor(ratio * (n - 1)));
+    if (idx !== currentFrameIdx) {
+      currentFrameIdx = idx;
+      drawBgFrame();
+    }
+  }
+
+  preloadFrames();
+
+  function isFist() {
+    if (!handLandmarks || handLandmarks.length < 21) return false;
+    const palm = handLandmarks[0];
+    const tips = [8, 12, 16, 20];
+    const pips = [6, 10, 14, 18];
+    let curled = 0;
+    for (let i = 0; i < 4; i++) {
+      const tip = handLandmarks[tips[i]];
+      const pip = handLandmarks[pips[i]];
+      const dTip = Math.hypot(tip.x - palm.x, tip.y - palm.y);
+      const dPip = Math.hypot(pip.x - palm.x, pip.y - palm.y);
+      if (dTip < dPip) curled++;
+    }
+    return curled >= 3;
+  }
+
+  function processHand() {
+    if (!handPos) { lastFistY = null; fistDir = 0; return; }
+    if (phase === 'done') return;
+
+    if (phase === 'pound') {
+      const mortarCx = window.innerWidth * 0.35;
+      const mortarCy = window.innerHeight * 0.55;
+      const dx = handPos.x - mortarCx;
+      const dy = handPos.y - mortarCy;
+      const inZone = Math.abs(dx) < 320 && dy < 400 && dy > -800;
+      const fist = isFist();
+      if (fist) fistGrace = 5;
+      else if (fistGrace > 0) fistGrace--;
+      const fistActive = fist || fistGrace > 0;
+
+      if (inZone && fistActive) {
+        if (lastFistY !== null) {
+          const dyMove = handPos.y - lastFistY;
+          let newDir = fistDir;
+          if (dyMove > 2) newDir = 1;
+          else if (dyMove < -2) newDir = -1;
+
+          if (newDir !== 0 && newDir !== fistDir) {
+            if (fistDir === 1 && newDir === -1 && dirChangeY !== null) {
+              const swing = Math.abs(handPos.y - dirChangeY);
+              if (swing > 12 && (performance.now() - lastPoundT) > 80) {
+                swingCount++;
+                qualityAccum += 0.4;
+                lastPoundT = performance.now();
+                updateBgScrub();
+                if (swingCount >= SWINGS_PER_POUND) {
+                  poundCount++;
+                  swingCount = 0;
+                  if (poundCount >= POUND_REQUIRED) {
+                    phase = 'pour';
+                    pourStartedX = null;
+                    swingCount = SWINGS_PER_POUND;  // 빻기 마지막 프레임 유지
+                    updateHint();
+                  }
+                }
+              }
+            }
+            dirChangeY = handPos.y;
+            fistDir = newDir;
+          } else if (fistDir === 0 && newDir !== 0) {
+            fistDir = newDir;
+            dirChangeY = handPos.y;
+          }
+        }
+        lastFistY = handPos.y;
+      } else {
+        lastFistY = null;
+        fistDir = 0;
+      }
+    } else if (phase === 'pour') {
+      const xRatio = handPos.x / window.innerWidth;
+      if (pourStartedX === null) {
+        if (xRatio < POUR_X_START + 0.08) pourStartedX = xRatio;
+      } else {
+        const span = POUR_X_END - POUR_X_START;
+        const prog = Math.max(0, Math.min(1, (xRatio - POUR_X_START) / span));
+        if (prog > pourTarget) pourTarget = prog;
+      }
+    }
+
+    /* 붓기 — 시작되면 자동으로 끝까지 진행 (사용자 입력은 가속 역할) */
+    if (phase === 'pour' && pourStartedX !== null) {
+      const diff = pourTarget - pourProgress;
+      if (diff > 0) {
+        qualityAccum += diff * 0.12;
+        pourProgress += diff * 0.06;
+      }
+      pourProgress = Math.min(1, pourProgress + 0.008);
+      updateBgScrub();
+      if (pourProgress >= 0.95) {
+        pourProgress = 1;
+        phase = 'done';
+        currentFrameIdx = frameCache.length - 1;
+        drawBgFrame();
+        showResult();
+      }
+    }
+    updateProgress();
+  }
+
+  function updateHint() {
+    if (phase === 'pound') {
+      hintEl.innerHTML = '절구 위에서 <b>주먹을 쥐고 위아래로</b> 빻으세요';
+      guidePound.classList.remove('hidden');
+      guidePour.classList.remove('show');
+    } else if (phase === 'pour') {
+      hintEl.innerHTML = '손을 <b>왼쪽에서 오른쪽으로</b> 끌어 한지에 부으세요';
+      guidePound.classList.add('hidden');
+      guidePour.classList.add('show');
+    } else {
+      hintEl.textContent = '완성!';
+      guidePound.classList.add('hidden');
+      guidePour.classList.remove('show');
+    }
+  }
+  updateHint();
+
+  function drawHandSkeleton() {
+    fxCtx.clearRect(0, 0, fx.width, fx.height);
+    if (!handLandmarks || handLandmarks.length < 21) return;
+    const W = fx.width, H = fx.height;
+    const pts = new Array(21);
+    for (let i = 0; i < 21; i++) {
+      const lm = handLandmarks[i];
+      pts[i] = { x: (1 - lm.x) * W, y: lm.y * H };
+    }
+    const fist = isFist();
+    const active = fist || phase === 'pour';
+    const boneColor = active ? 'rgba(255, 210, 110, 0.95)' : 'rgba(255, 255, 255, 0.78)';
+    const boneGlow  = active ? 'rgba(255, 180, 60, 0.30)'  : 'rgba(200, 230, 255, 0.18)';
+    const jointFill = active ? 'rgba(255, 235, 160, 1)'    : 'rgba(255, 255, 255, 0.95)';
+
+    fxCtx.save();
+    fxCtx.lineCap = 'round';
+    fxCtx.lineJoin = 'round';
+    fxCtx.strokeStyle = boneGlow;
+    fxCtx.lineWidth = 6;
+    for (let b = 0; b < HAND_BONES.length; b++) {
+      const a = pts[HAND_BONES[b][0]], c = pts[HAND_BONES[b][1]];
+      fxCtx.beginPath(); fxCtx.moveTo(a.x, a.y); fxCtx.lineTo(c.x, c.y); fxCtx.stroke();
+    }
+    fxCtx.strokeStyle = boneColor;
+    fxCtx.lineWidth = 1.8;
+    for (let b = 0; b < HAND_BONES.length; b++) {
+      const a = pts[HAND_BONES[b][0]], c = pts[HAND_BONES[b][1]];
+      fxCtx.beginPath(); fxCtx.moveTo(a.x, a.y); fxCtx.lineTo(c.x, c.y); fxCtx.stroke();
+    }
+    fxCtx.fillStyle = jointFill;
+    for (let j = 0; j < 21; j++) {
+      const s = JOINT_SIZE[j] || 2.5;
+      fxCtx.beginPath(); fxCtx.arc(pts[j].x, pts[j].y, s, 0, Math.PI * 2); fxCtx.fill();
+    }
+    fxCtx.restore();
+  }
+
+  function tick() { processHand(); drawHandSkeleton(); requestAnimationFrame(tick); }
+  tick();
+
+  let started = false;
+  function initHands() {
+    if (started) return; started = true;
+    const hands = new window.Hands({
+      locateFile: f => 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/' + f
+    });
+    hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+    hands.onResults(r => {
+      if (!r.multiHandLandmarks || r.multiHandLandmarks.length === 0) {
+        handPos = null; handLandmarks = null; return;
+      }
+      handLandmarks = r.multiHandLandmarks[0];
+      const p = handLandmarks[9];
+      handPos = { x: (1 - p.x) * window.innerWidth, y: p.y * window.innerHeight };
+    });
+    const cam = new window.Camera(video, {
+      onFrame: async () => { await hands.send({ image: video }); },
+      width: 1280, height: 720,
+    });
+    cam.start();
+  }
+
+  function showResult() {
+    if (result.classList.contains('show')) return;
+    const ideal = POUND_REQUIRED + 4;
+    const ratio = Math.min(1.5, qualityAccum / ideal);
+    const total = Math.max(1, Math.min(3, Math.round(1 + ratio * 1.5)));
+    stars.textContent = ('★ '.repeat(total) + '☆ '.repeat(3 - total)).trim();
+    setTimeout(() => result.classList.add('show'), 500);
+  }
+  document.getElementById('result-btn').addEventListener('click', reset);
+  resetBtn.addEventListener('click', reset);
+  function reset() {
+    result.classList.remove('show');
+    phase = 'pound';
+    poundCount = 0;
+    swingCount = 0;
+    pourProgress = 0;
+    pourTarget = 0;
+    pourStartedX = null;
+    qualityAccum = 0;
+    lastFistY = null;
+    fistDir = 0;
+    dirChangeY = null;
+    currentFrameIdx = 0;
+    drawBgFrame();
+    progress.style.width = '0%';
+    updateProgress();
+    updateHint();
+  }
+
+  splashBtn.addEventListener('click', () => {
+    if (splashBtn.disabled) return;
+    splash.classList.add('gone');
+    initHands();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "comment": "한의학고전DB(mediclassics.kr) content_XXX ↔ 약재 매핑. PLANT_001 등 herb id를 키로, volume(20=권01, 21=권02, 22=권03)과 contentId를 지정.",
+  "PLANT_001": { "volume": 20, "contentId": 432 },
+  "PLANT_002": { "volume": 20, "contentId": 433 }
+}

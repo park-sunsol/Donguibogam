@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "blender": {
+      "type": "stdio",
+      "command": "/Library/Frameworks/Python.framework/Versions/3.14/bin/blender-mcp"
+    }
+  }
+}

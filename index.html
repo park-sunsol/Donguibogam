@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>동의보감 탕액편 아카이브</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/hero.css">
+  <link rel="stylesheet" href="css/filters.css">
+  <link rel="stylesheet" href="css/efficacy.css">
+  <link rel="stylesheet" href="css/list.css">
+  <link rel="stylesheet" href="css/modal.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&family=Yeon+Sung&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="css/presc.css">
+  <link rel="stylesheet" href="css/data.css">
+  <link rel="stylesheet" href="css/features.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://esm.sh/three@0.160.0",
+      "three/addons/": "https://esm.sh/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <link rel="modulepreload" href="js/efficacy-universe-3d.js">
+</head>
+<body>
+  <header class="header-glass">
+    <div class="header-inner">
+      <div class="header-top-row">
+        <div class="header-title">
+          <button type="button" class="header-logo-strip" id="header-logo-strip" aria-label="동의보감 탕액편 아카이브 – 클릭 시 시작 화면으로">
+            <img class="header-logo-img" src="asset/hero/logo_1.png" alt="" />
+            <img class="header-logo-img" src="asset/hero/logo_2.png" alt="" />
+            <img class="header-logo-img" src="asset/hero/logo_3.png" alt="" />
+            <img class="header-logo-img" src="asset/hero/logo_4.png" alt="" />
+          </button>
+        </div>
+        <div class="header-view-tabs">
+          <div class="view-tabs" role="tablist" aria-label="보기 방식">
+            <button type="button" role="tab" id="view-list" data-view="list" aria-selected="true">약재</button>
+            <button type="button" role="tab" id="view-efficacy" data-view="efficacy">효능</button>
+            <button type="button" role="tab" id="view-body" data-view="body">처방</button>
+            <button type="button" role="tab" id="view-data" data-view="data" title="프로젝트 소개 · 탕액편 분류·차트">가치</button>
+          </div>
+        </div>
+      </div>
+      <div class="header-search header-search-wrap">
+        <div class="header-search-inner">
+          <span id="search-rotating-hint" class="search-rotating-hint" aria-hidden="true"></span>
+          <input type="search" id="search-herb" name="search-herb"
+                 placeholder=""
+                 aria-label="약재 검색"
+                 data-role="search-input" class="header-search-input" />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero hero-overlay" id="hero" aria-label="시작 화면">
+      <div class="hero-intro" id="hero-intro" aria-hidden="false" data-intro-text="약재의 성미와 쓰임을 체계화해, 처방의 기준을 세운 한의학의 핵심 지도">
+        <button type="button" class="hero-intro-skip" id="hero-intro-skip" aria-label="건너뛰기">SKIP</button>
+        <p class="hero-intro-text"><span class="hero-intro-typed" id="hero-intro-typed"></span><span class="hero-intro-cursor" aria-hidden="true">|</span></p>
+      </div>
+      <!--
+      <div class="hero-gallery-bg" id="hero-gallery-bg" aria-hidden="true">
+        <div class="hero-gallery-inner">
+          <div class="hero-gallery-item" style="--tz: -80px; --rx: 8deg"><img src="asset/img/Chrysanthemum.png" alt="" /></div>
+          <div class="hero-gallery-item" style="--tz: 40px; --rx: -5deg"><img src="asset/img/Doraji.png" alt="" /></div>
+          <div class="hero-gallery-item" style="--tz: -40px; --rx: -8deg"><img src="asset/img/ginger.png" alt="" /></div>
+          <div class="hero-gallery-item" style="--tz: 60px; --rx: 6deg"><img src="asset/img/goji.png" alt="" /></div>
+          <div class="hero-gallery-item" style="--tz: -60px; --rx: 4deg"><img src="asset/img/insam.png" alt="" /></div>
+          <div class="hero-gallery-item" style="--tz: 20px; --rx: -6deg"><img src="asset/img/jujube.png" alt="" /></div>
+          <div class="hero-gallery-item" style="--tz: -100px; --rx: 3deg"><img src="asset/img/peach.png" alt="" /></div>
+          <div class="hero-gallery-item" style="--tz: 80px; --rx: -4deg"><img src="asset/img/fig.png" alt="" /></div>
+          <div class="hero-gallery-item" style="--tz: -20px; --rx: 7deg"><img src="asset/img/Honeysuckle_flower.png" alt="" /></div>
+          <div class="hero-gallery-item" style="--tz: 100px; --rx: -7deg"><img src="asset/img/Glutinous_rice.png" alt="" /></div>
+        </div>
+      </div>
+      <div class="hero-split">
+        <div class="hero-quadrants" aria-hidden="true">
+          <div class="hero-quadrant hero-quad-1">
+            <img class="hero-logo hero-logo-1" src="asset/hero/logo_1.png" alt="" />
+          </div>
+          <div class="hero-quadrant hero-quad-2">
+            <img class="hero-logo hero-logo-2" src="asset/hero/logo_2.png" alt="" />
+          </div>
+          <div class="hero-quadrant hero-quad-3">
+            <img class="hero-logo hero-logo-3" src="asset/hero/logo_3.png" alt="" />
+          </div>
+          <div class="hero-quadrant hero-quad-4">
+            <img class="hero-logo hero-logo-4" src="asset/hero/logo_4.png" alt="" />
+          </div>
+        </div>
+      </div>
+      <button type="button" class="hero-float-cta" id="hero-float-cta" aria-label="동의보감 탕약편 바로가기">동의보감 탕약편 바로가기</button>
+      -->
+    </section>
+
+    <div class="sticky-tabs-bar">
+      <div id="list-filters" class="list-filters" data-role="list-filters" aria-hidden="false">
+        <div class="list-filters-inner">
+          <div class="filter-group filter-group-main">
+            <span class="filter-group-label">분류</span>
+            <div class="category-chips" role="tablist" aria-label="카테고리 필터">
+              <button type="button" role="tab" data-filter-main="plant">식물</button>
+              <button type="button" role="tab" data-filter-main="animal">동물</button>
+              <button type="button" role="tab" data-filter-main="mineral">광물</button>
+              <button type="button" role="tab" data-filter-main="other">기타</button>
+            </div>
+          </div>
+          <span class="filter-sep" aria-hidden="true">|</span>
+          <div class="filter-group filter-group-efficacy">
+            <span class="filter-group-label">효능</span>
+            <div class="function-filters" data-role="function-filters" data-efficacy-source="effect-efficacy-map">
+              <!-- 효능 버튼은 effect-efficacy-map.js DONGUIBOGAM_EFFICACY_PRIMARY_TAGS 기준으로 script.js에서 생성 -->
+            </div>
+          </div>
+        </div>
+        <div class="sub-category-wrap" id="sub-category-wrap" aria-hidden="true">
+          <span class="sub-category-label">상세</span>
+          <div class="sub-category-chips" data-role="sub-category-chips"></div>
+        </div>
+        <div id="filter-coachmark" class="coachmark coachmark--filter coachmark-arrow-up" aria-hidden="true" role="status">
+          <p class="coachmark-text">필터를 통해 약재를 자세히 검색할 수 있어요</p>
+          <button type="button" class="coachmark-close" aria-label="안내 닫기">&times;</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="body-view-anchor" class="body-view-anchor"></div>
+
+    <div id="list-view" class="view-panel" data-view-panel="list" aria-hidden="false">
+      <p class="view-caption"><span class="view-caption-text"><span id="list-caption-prefix">가나다순</span> · <span id="list-count">0</span>개<button type="button" id="filter-reset-btn" class="filter-reset-btn" hidden>필터 초기화</button></span><span class="caption-help" id="chungbu-help" hidden><button type="button" class="caption-help-label" id="chungbu-help-label" aria-expanded="false">새우, 뱀 등이 왜 '충부'에 포함되나요?</button><button type="button" class="caption-help-icon" id="chungbu-help-icon" aria-label="충부 분류 설명 보기" aria-expanded="false">?</button><span class="caption-help-bubble" id="chungbu-help-bubble" role="tooltip" hidden><span class="caption-help-body"><span>동의보감은 동물성 약재를 <b>금부·수부·어부·충부</b>의 4가지로 나눕니다.</span><span>금부는 날짐승(날아다니는 동물), 수부는 길짐승(땅 위를 걸어다니는 동물), 어부는 비늘 달린 물고기만을 의미합니다. 마지막으로 <b>충부는 금부·수부·어부 어디에도 깔끔히 들어가지 않는 나머지 모든 동물</b>을 뜻합니다.</span><span>그래서 동의보감에서는 충부를 좁은 의미의 곤충으로 보는 것이 아니라 <b>곤충·갑각류·어패류·양서류·파충류 등을 포괄한 범위</b>로 생각해야 합니다.</span></span></span></span></p>
+      <div id="list-view-grid" class="herb-list-grid" data-role="herb-grid" aria-label="약재 목록">
+        <!-- JS: 전체 약재 카드 (가나다순) -->
+      </div>
+    </div>
+
+    <!-- 처방 탭 전체 폭 필터 헤더 — main 직계 자식으로 sticky 정상 동작 -->
+    <div class="presc-filter-header">
+      <div class="presc-filter-inner">
+        <div class="body3d-chips" id="body3d-chips">
+          <span class="body3d-chips-label">부위</span>
+          <div class="body3d-chips-scroll">
+            <button class="body3d-chip body3d-chip--all body3d-chip--active" data-part="">전체</button>
+            <button class="body3d-chip" data-part="skull">머리</button>
+            <button class="body3d-chip" data-part="head">흉부</button>
+            <button class="body3d-chip" data-part="chest">복부</button>
+            <button class="body3d-chip" data-part="abdomen">신장·생식</button>
+            <button class="body3d-chip" data-part="arms">팔</button>
+            <button class="body3d-chip" data-part="legs">다리</button>
+            <button class="body3d-chip" data-part="skin">피부·기타</button>
+          </div>
+        </div>
+        <div class="presc-type-bar">
+          <div class="presc-type-row" id="presc-type-row">
+            <span class="presc-type-row-label">처방법</span>
+            <button class="presc-type-card active" data-ptype="" title="다섯 가지 제형의 처방을 모두 표시">
+              <span class="ptc-name">전체</span>
+              <span class="ptc-desc">모든 제형</span>
+            </button>
+            <button class="presc-type-card ptc-tang" data-ptype="tang" data-img="asset/prescription/herbal_tang.png" title="탕(湯) — 물에 끓여 우려낸 즙. 흡수가 빠르고 급성에 적합">
+              <span class="ptc-name">탕<span class="ptc-hanja">湯</span></span>
+              <span class="ptc-desc">달인 액체</span>
+            </button>
+            <button class="presc-type-card ptc-hwan" data-ptype="hwan" data-img="asset/prescription/herbal_whan.png" title="환(丸) — 꿀로 반죽해 둥글게 빚은 알약. 효력이 길고 휴대 편리">
+              <span class="ptc-name">환<span class="ptc-hanja">丸</span></span>
+              <span class="ptc-desc">둥글게 빚은 형태</span>
+            </button>
+            <button class="presc-type-card ptc-san" data-ptype="san" data-img="asset/prescription/herbal_san.png" title="산(散) — 약재를 곱게 빻은 가루. 위장에 직접 작용해 빠르게 흡수">
+              <span class="ptc-name">산<span class="ptc-hanja">散</span></span>
+              <span class="ptc-desc">곱게 빻은 가루</span>
+            </button>
+            <button class="presc-type-card ptc-go" data-ptype="go" data-img="asset/prescription/herbal_go.png" title="고(膏) — 오래 졸여 진하게 만든 약엿. 자양강장·만성 질환에 적합">
+              <span class="ptc-name">고<span class="ptc-hanja">膏</span></span>
+              <span class="ptc-desc">농축 졸임액</span>
+            </button>
+            <button class="presc-type-card ptc-dan" data-ptype="dan" data-img="asset/prescription/herbal_dan.png" title="단(丹) — 광물·약재를 단련해 빚은 환. 응급·중증·강력 작용">
+              <span class="ptc-name">단<span class="ptc-hanja">丹</span></span>
+              <span class="ptc-desc">굳혀 만든 형태</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="body-view" class="view-panel presc-view" data-view-panel="body" aria-hidden="true">
+
+      <!-- 모바일 전용: 처방 탭은 PC 최적화 — 인터랙션 차단 안내 -->
+      <div class="presc-mobile-block" id="presc-mobile-block" aria-hidden="true">
+        <div class="presc-mobile-block-inner">
+          <span class="presc-mobile-block-badge">처방 조제실</span>
+          <p class="presc-mobile-block-title">PC 환경에서 최적화 되어 있습니다</p>
+          <p class="presc-mobile-block-desc">3D 인체를 돌려보고 직접 약재를 조제하는<br>인터랙티브 경험은 데스크톱에서 더 생생합니다.<br>PC로 접속해 의원이 되어 환자를 치료해보세요.</p>
+        </div>
+      </div>
+
+      <div class="presc-split-layout">
+
+        <div id="presc-controls-coachmark" class="coachmark coachmark--presc-controls coachmark-arrow-down" aria-hidden="true" role="status">
+          <p class="coachmark-text">성별, 부위, 처방방법을 변경할 수 있어요</p>
+          <button type="button" class="coachmark-close" aria-label="안내 닫기">&times;</button>
+        </div>
+        <div id="presc-rx-coachmark" class="coachmark coachmark--presc-rx coachmark-arrow-down" aria-hidden="true" role="status">
+          <p class="coachmark-text">원하는 처방을 직접 조제해보세요!</p>
+          <button type="button" class="coachmark-close" aria-label="안내 닫기">&times;</button>
+        </div>
+
+        <!-- 좌측: 3D 인체 뷰어 -->
+        <div class="presc-left-col" id="presc-left-col">
+          <!-- Three.js 캔버스 -->
+          <div class="body3d-canvas-wrap" id="body3d-canvas-wrap">
+            <canvas id="body3d-canvas"></canvas>
+            <div class="body3d-loading" id="body3d-loading">모델 로딩 중…</div>
+            <div class="body3d-selected-label" id="body3d-selected-label"></div>
+            <!-- 성별 전환 버튼 (인물 우측 하단 오버레이) -->
+            <div class="body3d-gender-toggle">
+              <button class="body3d-gender-btn body3d-gender-btn--active" data-gender="male">남</button>
+              <button class="body3d-gender-btn" data-gender="female">여</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 우측: 처방 필터 상태 + 그리드 -->
+        <div class="presc-right-col">
+          <!-- 제형 카드 호버 시 떠오르는 이미지 프리뷰 -->
+          <div id="presc-type-preview" class="presc-type-preview" aria-hidden="true">
+            <img id="presc-type-preview-img" alt="">
+            <div id="presc-type-preview-cap" class="presc-type-preview-cap">
+              <strong class="ptc-preview-title"></strong>
+              <p class="ptc-preview-desc"></p>
+            </div>
+          </div>
+          <!-- 필터 상태 표시 -->
+          <div class="presc-filter-status" id="presc-filter-status">
+            <span class="pfs-label" id="pfs-label"></span>
+            <button type="button" class="pfs-reset" id="pfs-reset" hidden>필터 초기화</button>
+          </div>
+          <!-- 처방 그리드 -->
+          <div id="presc-grid" class="presc-grid" aria-label="처방 목록"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="data-view" class="view-panel data-view" data-view-panel="data" aria-hidden="true">
+
+      <!-- 모바일 전용: 가치 탭은 PC 최적화 — 콘텐츠 숨기고 안내만 표시 -->
+      <div class="presc-mobile-block" id="data-mobile-block" aria-hidden="true">
+        <div class="presc-mobile-block-inner">
+          <span class="presc-mobile-block-badge">동의보감의 가치</span>
+          <p class="presc-mobile-block-title">PC 환경에서 최적화 되어 있습니다</p>
+          <p class="presc-mobile-block-desc">방대한 약재 데이터와 인터랙티브 그래프는<br>데스크톱에서 더 깊이 있게 살펴볼 수 있습니다.<br>PC로 접속해 숨겨진 이야기를 만나보세요.</p>
+        </div>
+      </div>
+
+      <nav class="overview-anchor-nav" aria-label="개요 섹션 바로가기">
+        <div class="overview-anchor-nav-inner" role="tablist">
+          <button type="button" class="overview-anchor-link active" role="tab" aria-selected="true" data-target="ov-dgbg">동의보감</button>
+          <button type="button" class="overview-anchor-link" role="tab" aria-selected="false" data-target="dashboard-container">향약과 자주의학</button>
+          <button type="button" class="overview-anchor-link" role="tab" aria-selected="false" data-target="rare-herbs-section">그땐 맞고 지금은 틀리다</button>
+          <button type="button" class="overview-anchor-link" role="tab" aria-selected="false" data-target="endangered-herbs-section">멸종위기 약재들</button>
+          <button type="button" class="overview-anchor-link" role="tab" aria-selected="false" data-target="herb-parts-section">한 약재 여러쓰임</button>
+          <button type="button" class="data-sources-anchor-btn" id="data-sources-anchor-btn" aria-label="출처 보기" onclick="document.getElementById('data-view-sources').scrollIntoView({behavior:'smooth'})">출처</button>
+        </div>
+      </nav>
+
+      <section id="ov-dgbg" class="dgbg-intro-section" aria-label="동의보감 개요">
+        <div class="dgbg-story">
+
+          <!-- 1. 연도 + 편찬 연혁 -->
+          <div class="dgbg-story-panel dgbg-intro-panel">
+            <div class="dgbg-intro-header overview-card-header">
+              <div>
+                <h2 class="dgbg-intro-title overview-card-title">동아시아 의학의 정수 「동의보감」</h2>
+                <p class="dgbg-intro-subtitle dashboard-block-subtitle overview-card-subtitle">한 시대의 의학이 사백 년의 기준이 되었다</p>
+              </div>
+            </div>
+            <div class="dgbg-year-display">
+              <div class="dgbg-year-num" id="dgbg-active-year">1596 - 2026</div>
+              <!-- 활성 단계 설명 (숫자 바로 아래) -->
+              <div class="dgbg-htl-details">
+                <div class="dgbg-htl-detail" data-htl-idx="0">
+                  <p class="dgbg-htl-detail-desc">조선 개국 직후 편찬된 향약 의서로, 우리 약재만으로 병을 다스리려 한 자주의학 전통의 출발점이다. 「동의보감」으로 이어지는 향약 의서 계보의 첫머리에 놓인다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="1">
+                  <p class="dgbg-htl-detail-desc">세종 대에 향약 의학을 집대성한 의서로, 국산 약재의 효능과 처방을 방대하게 정리했다. 향약 의서 전통을 체계화한 분수령이 되었다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="2">
+                  <p class="dgbg-htl-detail-desc">향약집성방에 집성된 본초(약재) 지식의 전통으로, 우리 약재의 이름과 성질을 정리했다. 이 흐름이 「동의보감」 탕액편의 향약명 병기로 이어진다.</p>
+                </div>
+                <div class="dgbg-htl-detail active" data-htl-idx="3">
+                  <p class="dgbg-htl-detail-desc">선조의 명으로 허준이 내의원 의관들과 함께 편찬을 시작했다. 중국과 조선의 의학 문헌을 집대성하고 민간 처방을 수집하는 방대한 작업이었다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="4">
+                  <p class="dgbg-htl-detail-desc">일본의 침략으로 편찬 작업이 중단된다. 허준은 선조와 함께 피란길에 오르고, 공동 편찬진이 흩어지면서 이후 허준 홀로 작업을 이어가게 된다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="5">
+                  <p class="dgbg-htl-detail-desc">선조가 승하하자 허준은 왕을 살리지 못한 책임으로 의주에 유배된다. 그러나 유배 중에도 집필을 멈추지 않았고, 이 시기에 상당 부분이 완성된다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="6">
+                  <p class="dgbg-htl-detail-desc">25권의 방대한 의학 백과사전이 완성되어 내의원에서 목활자로 간행된다. 1,400여 종의 약재와 4,234가지 처방이 수록된 동아시아 최대 규모의 의학 총서다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="14">
+                  <p class="dgbg-htl-detail-desc">「동의보감」은 일본에 전해져 1724년 막부가 직접 「정정 동의보감」을 간행하는 등<br>에도 시대 일본 의학에 큰 영향을 주었다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="15">
+                  <p class="dgbg-htl-detail-desc">중국에서도 18세기 이후 여러 차례 간행되어 청대 의학에 수용·활용되었다. 「동의보감」은 한·중·일 동아시아 전역으로 뻗어나간 의학 총서였다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="7">
+                  <p class="dgbg-htl-detail-desc">정조의 명으로 「동의보감」이 규장각에서 새롭게 교정·재간행된다. 이 규장각본은 이후 조선 의학 교육의 표준 판본으로 자리매김했다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="8">
+                  <p class="dgbg-htl-detail-desc">갑오개혁을 전후로 서양의학이 본격 도입된다. 광혜원 설립으로 서양식 의료가 제도화되고, 전통 한의학은 점차 제도적 위치를 잃어가기 시작한다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="9">
+                  <p class="dgbg-htl-detail-desc">조선총독부는 의생규칙(1913)을 제정하여 한의사를 '의생'으로 격하시킨다. 신규 한의사 양성이 금지되고, 전통의학은 제도권 밖으로 밀려난다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="10">
+                  <p class="dgbg-htl-detail-desc">광복 후 1951년 국민의료법 제정으로 한의사 제도가 공식 복원된다. 「동의보감」은 다시 한의학 교육의 핵심으로 부활하며 전통의학의 제도적 기반이 마련된다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="12">
+                  <p class="dgbg-htl-detail-desc">전통의학 지식체계의 독창성과 완결성을 세계적으로 인정받아 유네스코 세계기록유산으로 등재된다. WHO 전통의학 전략과도 연계되어 세계 전통의학 연구의 중요한 자료로 활용된다.</p>
+                </div>
+                <div class="dgbg-htl-detail" data-htl-idx="13">
+                  <p class="dgbg-htl-detail-desc">사백 년이 지난 오늘날에도 「동의보감」은 살아 있는 지식이다.</p>
+                  <p class="dgbg-htl-detail-sub">이 프로젝트는 「동의보감」 탕액편을 디지털로 구조화하여 현 시대를 살아가는 우리에게<br>400년 전 편찬된 지식이 전통의학의 세계화라는 오늘의 의제와 직접 닿아 있음을 소개한다.</p>
+                </div>
+              </div>
+            </div>
+
+          <!-- 편별 구성 팝업 -->
+          <div class="dgbg-chapters-modal" id="dgbg-chapters-modal" aria-hidden="true">
+            <div class="dgbg-chapters-modal-backdrop" data-close-chapters></div>
+            <div class="dgbg-chapters-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="dgbg-chapters-modal-title">
+              <div class="dgbg-chapters-modal-head">
+                <h3 class="dgbg-chapters-modal-title" id="dgbg-chapters-modal-title">편별 구성<span class="dgbg-chapters-modal-sub">25권 25책</span></h3>
+                <button type="button" class="dgbg-chapters-modal-close" data-close-chapters aria-label="닫기"><i class="ti ti-x"></i></button>
+              </div>
+              <div class="dgbg-chapters-tabs" role="tablist" aria-label="동의보감 편별 구성">
+                <button role="tab" class="dgbg-chapters-tab active" data-chapter="naegyeong" aria-selected="true">
+                  <span class="dgbg-chapters-tab-name">내경편</span>
+                  <span class="dgbg-chapters-tab-hanja">內景篇</span>
+                </button>
+                <button role="tab" class="dgbg-chapters-tab" data-chapter="oekhyeong" aria-selected="false">
+                  <span class="dgbg-chapters-tab-name">외형편</span>
+                  <span class="dgbg-chapters-tab-hanja">外形篇</span>
+                </button>
+                <button role="tab" class="dgbg-chapters-tab" data-chapter="japbyeong" aria-selected="false">
+                  <span class="dgbg-chapters-tab-name">잡병편</span>
+                  <span class="dgbg-chapters-tab-hanja">雜病篇</span>
+                </button>
+                <button role="tab" class="dgbg-chapters-tab" data-chapter="tangaek" aria-selected="false">
+                  <span class="dgbg-chapters-tab-name">탕액편</span>
+                  <span class="dgbg-chapters-tab-hanja">湯液篇</span>
+                </button>
+                <button role="tab" class="dgbg-chapters-tab" data-chapter="chimgu" aria-selected="false">
+                  <span class="dgbg-chapters-tab-name">침구편</span>
+                  <span class="dgbg-chapters-tab-hanja">鍼灸篇</span>
+                </button>
+              </div>
+              <div class="dgbg-chapters-panels">
+                <div class="dgbg-chapters-panel active" data-chapter="naegyeong" role="tabpanel">
+              <div class="dgbg-chapter-header">
+                <i class="ti ti-heart-rate-monitor dgbg-chapter-icon"></i>
+                <div>
+                  <p class="dgbg-chapter-meta-hanja">內景篇</p>
+                  <p class="dgbg-chapter-vol">권1–4 · 4권</p>
+                </div>
+              </div>
+              <p class="dgbg-chapter-desc">몸 안의 장부와 오장육부를 다루는 편. 정기신혈(精氣神血)을 중심으로 인체 내부의 생리와 병리를 체계적으로 정리했습니다.</p>
+            </div>
+            <div class="dgbg-chapters-panel" data-chapter="oekhyeong" role="tabpanel">
+              <div class="dgbg-chapter-header">
+                <i class="ti ti-user dgbg-chapter-icon"></i>
+                <div>
+                  <p class="dgbg-chapter-meta-hanja">外形篇</p>
+                  <p class="dgbg-chapter-vol">권5–8 · 4권</p>
+                </div>
+              </div>
+              <p class="dgbg-chapter-desc">눈·귀·코·입·피부 등 몸의 외부 기관을 다루는 편. 두면부터 사지말단까지 신체 외형의 구조와 질환을 서술합니다.</p>
+            </div>
+            <div class="dgbg-chapters-panel" data-chapter="japbyeong" role="tabpanel">
+              <div class="dgbg-chapter-header">
+                <i class="ti ti-stethoscope dgbg-chapter-icon"></i>
+                <div>
+                  <p class="dgbg-chapter-meta-hanja">雜病篇</p>
+                  <p class="dgbg-chapter-vol">권9–19 · 11권</p>
+                </div>
+              </div>
+              <p class="dgbg-chapter-desc">각종 질병과 증상별 치료법을 망라한 편. 풍·한·서·습 등 외인성 질환부터 내상·전염병까지 광범위하게 다룹니다.</p>
+            </div>
+            <div class="dgbg-chapters-panel" data-chapter="tangaek" role="tabpanel">
+              <div class="dgbg-chapter-header">
+                <i class="ti ti-leaf dgbg-chapter-icon"></i>
+                <div>
+                  <p class="dgbg-chapter-meta-hanja">湯液篇</p>
+                  <p class="dgbg-chapter-vol">권20–22 · 3권</p>
+                </div>
+              </div>
+              <p class="dgbg-chapter-desc">1,400여 종의 약재를 수록한 편. 국산 향약재를 강조하며 약재의 성질·채취·포제법을 상세히 기록했습니다.</p>
+            </div>
+            <div class="dgbg-chapters-panel" data-chapter="chimgu" role="tabpanel">
+              <div class="dgbg-chapter-header">
+                <i class="ti ti-needle dgbg-chapter-icon"></i>
+                <div>
+                  <p class="dgbg-chapter-meta-hanja">鍼灸篇</p>
+                  <p class="dgbg-chapter-vol">권23–25 · 3권</p>
+                </div>
+              </div>
+              <p class="dgbg-chapter-desc">침과 뜸 치료의 원리와 경혈을 정리한 편. 365개 혈자리의 위치와 주치병증을 도해와 함께 상세히 기술했습니다.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+            <!-- 편찬 연혁 (향약 의서 계보·해외 전파 가지) -->
+            <div class="dgbg-htl-wrapper">
+              <div class="dgbg-htl-scroll">
+                <div class="dgbg-htl-track">
+                  <svg class="dgbg-htl-svg" aria-hidden="true"></svg>
+                  <div class="dgbg-htl-mergehost">
+                    <div class="dgbg-htl-branch" aria-label="향약 의서 계보">
+                      <button class="dgbg-htl-node dgbg-htl-node--lineage" data-htl-idx="0" type="button">
+                        <div class="dgbg-htl-node-year">1398</div>
+                        <div class="dgbg-htl-node-dot"></div>
+                        <div class="dgbg-htl-node-title">「향약제생집성방」</div>
+                      </button>
+                      <button class="dgbg-htl-node dgbg-htl-node--lineage" data-htl-idx="1" type="button">
+                        <div class="dgbg-htl-node-year">1433</div>
+                        <div class="dgbg-htl-node-dot"></div>
+                        <div class="dgbg-htl-node-title">「향약집성방」</div>
+                      </button>
+                      <button class="dgbg-htl-node dgbg-htl-node--lineage" data-htl-idx="2" type="button">
+                        <div class="dgbg-htl-node-year">1433</div>
+                        <div class="dgbg-htl-node-dot"></div>
+                        <div class="dgbg-htl-node-title">「향약본초」</div>
+                      </button>
+                    </div>
+                    <button class="dgbg-htl-node active" data-htl-idx="3" type="button">
+                      <div class="dgbg-htl-node-year">1596</div>
+                      <div class="dgbg-htl-node-dot"></div>
+                      <div class="dgbg-htl-node-title">편찬 시작</div>
+                    </button>
+                  </div>
+                  <button class="dgbg-htl-node" data-htl-idx="4" type="button">
+                    <div class="dgbg-htl-node-year">1597</div>
+                    <div class="dgbg-htl-node-dot"></div>
+                    <div class="dgbg-htl-node-title">정유재란</div>
+                  </button>
+                  <button class="dgbg-htl-node" data-htl-idx="5" type="button">
+                    <div class="dgbg-htl-node-year">1608</div>
+                    <div class="dgbg-htl-node-dot"></div>
+                    <div class="dgbg-htl-node-title">허준 유배</div>
+                  </button>
+                  <div class="dgbg-htl-jhost">
+                    <div class="dgbg-htl-jbranch" aria-label="해외 전파">
+                      <button class="dgbg-htl-node dgbg-htl-node--spread" data-htl-idx="14" type="button">
+                        <div class="dgbg-htl-node-year">1724</div>
+                        <div class="dgbg-htl-node-dot"></div>
+                        <div class="dgbg-htl-node-title">일본 전파</div>
+                      </button>
+                      <button class="dgbg-htl-node dgbg-htl-node--spread" data-htl-idx="15" type="button">
+                        <div class="dgbg-htl-node-year">18C</div>
+                        <div class="dgbg-htl-node-dot"></div>
+                        <div class="dgbg-htl-node-title">중국 전파</div>
+                      </button>
+                    </div>
+                    <button class="dgbg-htl-node dgbg-htl-node--key" data-htl-idx="6" type="button">
+                      <div class="dgbg-htl-node-year">1613</div>
+                      <div class="dgbg-htl-node-dot"></div>
+                      <div class="dgbg-htl-node-title">완성·간행</div>
+                    </button>
+                  </div>
+                  <button class="dgbg-htl-node" data-htl-idx="7" type="button">
+                    <div class="dgbg-htl-node-year">1799</div>
+                    <div class="dgbg-htl-node-dot"></div>
+                    <div class="dgbg-htl-node-title">규장각본 재간행</div>
+                  </button>
+                  <button class="dgbg-htl-node" data-htl-idx="8" type="button">
+                    <div class="dgbg-htl-node-year">1884</div>
+                    <div class="dgbg-htl-node-dot"></div>
+                    <div class="dgbg-htl-node-title">서양의학 도입</div>
+                  </button>
+                  <button class="dgbg-htl-node" data-htl-idx="9" type="button">
+                    <div class="dgbg-htl-node-year">1910s</div>
+                    <div class="dgbg-htl-node-dot"></div>
+                    <div class="dgbg-htl-node-title">일제강점·탄압</div>
+                  </button>
+                  <button class="dgbg-htl-node" data-htl-idx="10" type="button">
+                    <div class="dgbg-htl-node-year">1951</div>
+                    <div class="dgbg-htl-node-dot"></div>
+                    <div class="dgbg-htl-node-title">한의사 제도 복원</div>
+                  </button>
+                  <button class="dgbg-htl-node dgbg-htl-node--key" data-htl-idx="12" type="button">
+                    <div class="dgbg-htl-node-year">2009</div>
+                    <div class="dgbg-htl-node-dot"></div>
+                    <div class="dgbg-htl-node-title">유네스코 등재</div>
+                  </button>
+                  <button class="dgbg-htl-node dgbg-htl-node--now" data-htl-idx="13" type="button">
+                    <div class="dgbg-htl-node-year">2026</div>
+                    <div class="dgbg-htl-node-dot"></div>
+                    <div class="dgbg-htl-node-title">오늘날</div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. 향약, 자주의학의 뿌리 (기존 유지) -->
+          <div class="dgbg-story-panel dgbg-hyang-panel">
+          <div class="dgbg-hyang">
+            <!-- 먹 번짐(ink bleed) SVG 필터: 블러된 가장자리 임계값 처리 + 섬유 번짐 -->
+            <svg class="dgbg-ink-defs" width="0" height="0" aria-hidden="true" focusable="false">
+              <filter id="dgbg-ink-threshold" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+                <!-- 1) 알파 임계값: 흐릿한 가장자리를 잉크처럼 뭉친 형태로 -->
+                <feComponentTransfer in="SourceGraphic" result="thresholded">
+                  <feFuncA type="discrete" tableValues="0 0 0 1 1 1 1 1 1 1" />
+                </feComponentTransfer>
+                <!-- 2) 종이 섬유 노이즈 -->
+                <feTurbulence type="fractalNoise" baseFrequency="0.9 0.85" numOctaves="1" seed="7" result="fiber" />
+                <!-- 3) 노이즈로 잉크 가장자리를 미세하게 밀어 번짐 질감 부여 -->
+                <feDisplacementMap in="thresholded" in2="fiber" scale="2.4" xChannelSelector="R" yChannelSelector="G" />
+              </filter>
+            </svg>
+            <!-- 허준의 향약관 (집례) -->
+            <blockquote class="dgbg-hyang-quote">
+              <p class="dgbg-hyang-quote-text">"향약은 곧 약재에 대한 우리말 이름[鄕名]과 산지·채취 시기를 적어, 쉽게 갖추어 쓰고 멀리서 어렵게 구하는 폐단을 없애고자 함이다."</p>
+              <cite class="dgbg-hyang-quote-cite">— 허준, 「집례(集例)」</cite>
+            </blockquote>
+
+            <p class="dgbg-hyang-lead">
+              <strong>향약(鄕藥)</strong>은 중국에서 들여온 수입 약재인 당약(唐藥)과 달리 <strong>우리 땅에서 나는 약재</strong>를 가리킨다. 동의보감은 이런 향약을 정리해 온 의서들의 전통을 집대성한 결실이다.<br>비싼 수입약 대신 발밑의 약초를, 전문가의 독점 대신 누구나 읽는 한글 표기를 택했다. 400년 전부터 행해졌던 <strong>자립의 정신</strong>은 오늘날에도 여전히 큰 울림을 주고 있다.
+            </p>
+
+          </div>
+          </div>
+
+        </div>
+      </section>
+
+      <div id="dashboard-container" class="dashboard-container" aria-label="탕액편 약재 분류 도표"></div>
+
+      <div id="rare-herbs-section" class="rare-herbs-section" aria-label="잘 쓰이지 않는 희귀 약재"></div>
+
+      <div id="endangered-herbs-section" class="endangered-herbs-section" aria-label="멸종위기 약재 정보 아카이빙"></div>
+
+      <section id="herb-parts-section" class="herb-parts-section" aria-label="약재 부위별 활용">
+        <div class="herb-parts-dashboard overview-card">
+          <div class="herb-parts-header overview-card-header">
+            <div>
+              <h2 class="herb-parts-title overview-card-title">하나의 약재에서 열 가지를 읽어낸 눈</h2>
+              <p class="herb-parts-subtitle overview-card-subtitle">부위마다 다른 쓰임을 찾아낸 것은 수백 년에 걸친 관찰과 경험이 빚어낸 정밀함이었다</p>
+            </div>
+          </div>
+          <div class="herb-parts-body">
+            <div class="lotus-stage" id="lotus-stage">
+              <svg class="lotus-leader" id="lotus-leader" aria-hidden="true">
+                <polyline class="lotus-leader-line" points="" fill="none" />
+                <circle class="lotus-leader-dot" cx="0" cy="0" r="4" />
+              </svg>
+              <div class="lotus-canvas-wrap" id="lotus-canvas-wrap">
+                <canvas id="lotus-canvas"></canvas>
+                <div class="lotus-loading" id="lotus-loading">모델 로딩 중…</div>
+              </div>
+              <aside class="lotus-info" id="lotus-info" aria-live="polite">
+                <div class="lotus-detail" id="lotus-detail" hidden>
+                  <div class="lotus-detail-stage" id="lotus-detail-stage">
+                    <canvas id="lotus-detail-canvas"></canvas>
+                    <div class="lotus-detail-loading hidden" id="lotus-detail-loading">상세 모델 로딩 중…</div>
+                  </div>
+                  <div class="lotus-detail-callouts">
+                    <div class="lotus-detail-callout" id="lotus-detail-callout-0" hidden></div>
+                    <div class="lotus-detail-callout" id="lotus-detail-callout-1" hidden></div>
+                  </div>
+                  <svg class="lotus-detail-leader" id="lotus-detail-leader" aria-hidden="true"></svg>
+                </div>
+                <div class="lotus-info-card" id="lotus-info-card" hidden>
+                  <img class="lotus-info-img" id="lotus-info-img" alt="" hidden>
+                  <h3 class="lotus-info-name"></h3>
+                  <p class="lotus-info-sub"></p>
+                  <p class="lotus-info-desc"></p>
+                </div>
+              </aside>
+            </div>
+            <div class="lotus-rail" id="lotus-rail" role="tablist" aria-label="연 부위 선택"></div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="data-view-sources" id="data-view-sources" aria-labelledby="data-view-sources-title">
+        <div class="data-view-sources-grid">
+          <div class="data-view-sources-col">
+            <h3 id="data-view-sources-title" class="data-view-sources-title">데이터/참고자료</h3>
+            <ul class="data-view-sources-list" aria-labelledby="data-view-sources-title">
+              <li>
+                <a href="https://www.who.int/teams/who-global-traditional-medicine-centre/traditional-medicine-strategy-2025-2034" class="data-view-sources-link" target="_blank" rel="noopener noreferrer">WHO Global Traditional Medicine Strategy 2025-2034</a>
+              </li>
+              <li>
+                <a href="https://www.mediclassics.kr/books/8" class="data-view-sources-link" target="_blank" rel="noopener noreferrer">한의학고전DB</a>
+              </li>
+              <li>
+                <a href="https://species.nibr.go.kr" class="data-view-sources-link" target="_blank" rel="noopener noreferrer">국가생물종지식정보시스템 (NIBR)</a>
+              </li>
+              <li>
+                <span class="data-view-sources-cite">『동의보감』의 지식 체계와 동아시아 의과학</span>
+              </li>
+              <li>
+                <span class="data-view-sources-cite">『동의보감』으로 이루어진 동아시아 의과학 문명의 교류</span>
+              </li>
+            </ul>
+          </div>
+          <div class="data-view-sources-col">
+            <h3 id="data-view-resources-title" class="data-view-sources-title">무료 리소스</h3>
+            <ul class="data-view-sources-list" aria-labelledby="data-view-resources-title">
+              <li>
+                <a href="https://developer.blender.org/docs/release_notes/4.0/asset_bundles/" class="data-view-sources-link" target="_blank" rel="noopener noreferrer">human-base-meshes-bundle</a>
+              </li>
+              <li>
+                <a href="https://freesound.org" class="data-view-sources-link" target="_blank" rel="noopener noreferrer">Freesound.org</a>
+              </li>
+              <li>
+                <a href="https://pixabay.com/ko/sound-effects/" class="data-view-sources-link" target="_blank" rel="noopener noreferrer">Pixabay Sound Effects</a>
+              </li>
+            </ul>
+          </div>
+          <div class="data-view-sources-col">
+            <h3 id="data-view-tools-title" class="data-view-sources-title">Tools</h3>
+            <p class="data-view-tools-line" aria-labelledby="data-view-tools-title">Claude Code, ChatGPT, Midjourney,<br>Figma, Photoshop, Blender, Seedance</p>
+          </div>
+        </div>
+        <div class="data-view-sign" aria-label="동의보감">
+          <div class="dgbg-sign-char" style="--ar: 449 / 514" data-lottie="asset/hero/dong_gradient_color.json"></div>
+          <div class="dgbg-sign-char" style="--ar: 411 / 487" data-lottie="asset/hero/yi_gradient_color.json"></div>
+          <div class="dgbg-sign-char" style="--ar: 359 / 450" data-lottie="asset/hero/bao_gradient_color.json"></div>
+          <div class="dgbg-sign-char" style="--ar: 519 / 457" data-lottie="asset/hero/gam_gradient_color.json"></div>
+        </div>
+      </footer>
+    </div>
+
+    <div id="efficacy-view" class="view-panel efficacy-view" data-view-panel="efficacy" aria-hidden="true">
+      <div id="efficacy-help-popup" class="efficacy-help-popup" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="efficacy-help-title">
+        <div class="efficacy-help-backdrop"></div>
+        <div class="efficacy-help-content">
+          <h2 id="efficacy-help-title" class="efficacy-help-title">효능 그래프 사용법</h2>
+          <dl class="efficacy-help-list">
+            <dt>계층 구조 (4단계)</dt>
+            <dd>1단계: 카테고리(몸부위) → 2단계: 대분류(효능) → 3단계: 중분류(곡부·어부 등) → 4단계: 약재</dd>
+            <dt>노드 크기</dt>
+            <dd>큰 노드 = 카테고리(몸부위)<br>중간 = 대분류(효능)<br>작은 = 중분류·약재</dd>
+            <dt>라벨 표시</dt>
+            <dd>선택 단계에 따라 최대 2단계만 표시<br>나머지 노드는 원으로 표시</dd>
+            <dt>조작 방법</dt>
+            <dd>좌클릭 드래그 = 이동<br>우클릭 드래그 = 회전<br>휠 = 줌</dd>
+          </dl>
+          <button type="button" class="efficacy-help-close" aria-label="닫기">&times;</button>
+        </div>
+      </div>
+      <div class="efficacy-universe-wrap">
+        <div id="efficacy-coachmark" class="coachmark coachmark--efficacy" aria-hidden="true" role="status">
+          <p class="coachmark-text">세부 효능을 클릭해서 자세히 알아보세요</p>
+          <button type="button" class="coachmark-close" aria-label="안내 닫기">&times;</button>
+        </div>
+        <div id="efficacy-tree-container" class="efficacy-tree-container efficacy-universe-3d" aria-label="효능 우주 시각화"></div>
+      </div>
+    </div>
+
+    <div id="empty-message" class="empty-message" aria-hidden="true">
+      <img class="empty-message-icon" src="asset/main/ico_noResult.png" alt="">
+      <p class="empty-message-text">검색·필터 조건에 맞는 약재가 없습니다.</p>
+    </div>
+  </main>
+
+  <div id="herb-detail-modal" class="herb-detail-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="herb-detail-title">
+    <div class="herb-detail-backdrop"></div>
+    <div class="herb-detail-popup">
+      <button type="button" class="herb-detail-close" aria-label="닫기">&times;</button>
+      <div id="herb-detail-glb" class="herb-detail-glb"></div>
+      <p id="herb-detail-title" class="herb-detail-popup-title"></p>
+    </div>
+  </div>
+
+  <div id="herb-ingredient-modal" class="herb-ingredient-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="herb-ingredient-title">
+    <div class="herb-ingredient-backdrop"></div>
+    <div class="herb-ingredient-popup">
+      <div class="herb-ingredient-popup-header">
+        <button type="button" class="herb-ingredient-close" aria-label="닫기">&times;</button>
+      </div>
+      <div class="herb-ingredient-popup-scroll">
+      <button type="button" class="herb-ingredient-nav herb-ingredient-nav-prev" aria-label="이전 약재" title="이전 약재"></button>
+      <button type="button" class="herb-ingredient-nav herb-ingredient-nav-next" aria-label="다음 약재" title="다음 약재"></button>
+      <div class="herb-ingredient-body">
+        <div class="herb-ingredient-image" id="herb-ingredient-image-wrap">
+          <img id="herb-ingredient-img" src="" alt="">
+          <span class="herb-ingredient-noimg" id="herb-ingredient-noimg" aria-hidden="true">이미지 없음</span>
+          <div id="herb-ingredient-glb" class="herb-ingredient-glb" aria-hidden="true"></div>
+        </div>
+        <div class="herb-ingredient-content">
+          <div class="herb-ingredient-basic">
+            <h2 id="herb-ingredient-title" class="herb-ingredient-title"></h2>
+            <div class="herb-ingredient-name-meta">
+              <p id="herb-ingredient-hanja" class="herb-ingredient-hanja"></p>
+              <p id="herb-ingredient-latin" class="herb-ingredient-latin"></p>
+            </div>
+            <p id="herb-ingredient-category" class="herb-ingredient-category"></p>
+          </div>
+          <h3 class="herb-ingredient-section">효능</h3>
+          <ul id="herb-ingredient-tags" class="herb-ingredient-tags"></ul>
+          <h3 class="herb-ingredient-section">동의보감 기록</h3>
+          <div id="herb-ingredient-donguibogam" class="herb-ingredient-donguibogam" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="herb-ingredient-similar">
+        <div class="herb-ingredient-similar-header">
+          <h3 class="herb-ingredient-similar-title">유사 효능 약재</h3>
+          <div id="herb-ingredient-similar-filters" class="herb-ingredient-similar-filters" aria-label="유사 효능 필터"></div>
+        </div>
+        <div id="herb-ingredient-similar-list" class="herb-ingredient-similar-list" role="list">
+          <!-- JS: 유사 약재 카드들 (스와이프) -->
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 웹캠 약재 조합 오버레이 (의원 롤플레이) -->
+  <div id="herb-game-overlay" class="herb-game-overlay" aria-hidden="true">
+
+    <!-- ① 게임 HUD 헤더 -->
+    <div class="herb-game-hud">
+      <!-- 중앙: 처방 타이틀 -->
+      <div class="hud-center-title">
+        <p class="herb-game-formula">처방하기</p>
+      </div>
+      <!-- 우측: 음소거 + 닫기 버튼 (absolute 고정) -->
+      <button type="button" id="herb-game-mute" class="herb-game-mute" aria-label="음소거" aria-pressed="false"></button>
+      <button type="button" id="herb-game-close" class="herb-game-close" aria-label="닫기">&times;</button>
+    </div>
+
+    <!-- 우측 — 펼친 동의보감 책 (좌:진찰 / 우:처방) -->
+    <div id="herb-game-rx-panel" class="herb-game-rx-panel">
+      <!-- 책 아래 겹쳐진 종이 3겹 — 두께감 -->
+      <div class="book-sheet book-sheet--3" aria-hidden="true"></div>
+      <div class="book-sheet book-sheet--2" aria-hidden="true"></div>
+      <div class="book-sheet book-sheet--1" aria-hidden="true"></div>
+      <div class="book-open">
+        <!-- 한지 섬유결 텍스처 오버레이 (책 위에 옅게) -->
+        <div class="book-texture" aria-hidden="true"></div>
+        <div class="book-spine"></div>
+        <!-- 좌측 페이지 — 진찰 -->
+        <div id="herb-game-patient" class="book-page book-page--left">
+          <div class="book-page-header">
+            <span class="book-page-title">증상</span>
+          </div>
+          <div class="book-page-body">
+            <div class="patient-info">
+              <p id="patient-disease-name" class="patient-disease-name"></p>
+            </div>
+            <div class="patient-figure-container">
+              <div class="patient-body-wrap" id="patient3d-wrap">
+                <canvas id="patient3d-canvas" class="patient-body-3d"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 우측 페이지 — 처방.
+             · 1페이지: 처방 개요(.leaf-front) 노출
+             · 화살표 클릭 → 책장(.rx-leaf)이 책등을 축으로 넘어가며
+               뒷면(.leaf-back, 좌측에 안착)과 아래장(.rx-page2-right)이 드러나 양쪽에 약재 표시 -->
+        <div class="book-page book-page--right">
+          <!-- 2페이지 우측: 약재(아래장) — 책장이 넘어가면 드러남 -->
+          <div id="rx-page2-right" class="rx-page2"></div>
+          <!-- 넘어가는 처방 책장 -->
+          <div id="rx-leaf" class="rx-leaf">
+            <div id="rx-front" class="leaf-front"></div>
+            <div id="rx-back" class="leaf-back"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 모바일 — 처방 책(증상·처방) 플로팅 토글 버튼 -->
+    <button type="button" id="herb-game-book-fab" class="herb-game-book-fab" aria-label="증상·처방 보기" aria-expanded="false">
+      <img src="asset/main/ico_prescription_tip.png" class="book-fab-img" alt="" aria-hidden="true">
+    </button>
+
+    <!-- ⑥ 처방 선택 화면 (탭 최초 진입) -->
+    <div id="herb-game-picker" class="herb-game-picker" aria-hidden="true">
+      <button type="button" class="picker-close-btn" id="herb-picker-close" aria-label="닫기">&times;</button>
+
+      <!-- 상단 소개 -->
+      <div class="picker-hero">
+        <p class="picker-eyebrow">조선 의원 타이쿤</p>
+        <p class="picker-title">동의보감 100방을 직접 조제하고<br>환자를 치료하세요</p>
+        <p class="picker-subtitle">탕·환·산·고·단 제형별로 선택하거나, 아픈 부위를 클릭하세요</p>
+      </div>
+
+      <!-- 본문: 신체 지도 + 증상 목록 -->
+      <div class="picker-body-area">
+
+        <!-- 좌측: 신체 지도 -->
+        <div class="picker-map-wrap">
+          <p class="picker-map-hint">👆 부위를 클릭하세요</p>
+          <div class="picker-figures">
+            <figure class="picker-figure picker-head-figure">
+              <img class="picker-map-img" src="asset/prescription/people_head.png" alt="머리·얼굴" />
+              <svg class="picker-hotspot-svg" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path class="picker-hotspot" data-body-part="head" data-filter-keywords="두통,편두통,어지럼" d="M 55 15 Q 100 2 145 15 L 148 82 Q 100 92 52 82 Z" fill="transparent" aria-label="이마·머리 - 두통·어지럼"/>
+                <ellipse class="picker-hotspot" data-body-part="head" data-filter-keywords="눈,시력,안구" cx="70" cy="100" rx="22" ry="14" fill="transparent" aria-label="눈 - 눈 피로·시력"/>
+                <ellipse class="picker-hotspot" data-body-part="head" data-filter-keywords="눈,시력,안구" cx="130" cy="100" rx="22" ry="14" fill="transparent" aria-label="눈 - 눈 피로·시력"/>
+                <ellipse class="picker-hotspot" data-body-part="head" data-filter-keywords="코막힘,감기,콧물" cx="100" cy="135" rx="14" ry="24" fill="transparent" aria-label="코 - 감기·코막힘"/>
+                <ellipse class="picker-hotspot" data-body-part="head" data-filter-keywords="기침,가래,천식,해소" cx="100" cy="168" rx="26" ry="12" fill="transparent" aria-label="입·인후 - 기침·가래"/>
+                <circle class="picker-hotspot" data-body-part="head" data-filter-keywords="이명,귀" cx="28" cy="105" r="16" fill="transparent" aria-label="귀 - 이명"/>
+                <circle class="picker-hotspot" data-body-part="head" data-filter-keywords="이명,귀" cx="172" cy="105" r="16" fill="transparent" aria-label="귀 - 이명"/>
+              </svg>
+            </figure>
+            <figure class="picker-figure picker-body-figure">
+              <img class="picker-map-img" src="asset/prescription/people.png" alt="전신" />
+              <svg class="picker-hotspot-svg" viewBox="0 0 240 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path class="picker-hotspot" data-body-part="head" data-filter-keywords="감기,오한,발열,목" d="M 95 92 L 145 92 L 148 112 L 92 112 Z" fill="transparent" aria-label="목 - 감기·열감"/>
+                <path class="picker-hotspot" data-body-part="chest" data-filter-keywords="기침,가래,천식,폐,담음" d="M 92 112 L 148 112 L 152 165 L 120 175 L 88 165 Z" fill="transparent" aria-label="가슴 - 기침·담음"/>
+                <circle class="picker-hotspot" data-body-part="chest" data-filter-keywords="불면,불안,두근,심신,심계" cx="120" cy="145" r="22" fill="transparent" aria-label="흉부 - 불면·불안·심계"/>
+                <path class="picker-hotspot" data-body-part="stomach" data-filter-keywords="소화,위장,식욕,비위,구토,구역" d="M 88 175 L 152 175 L 148 245 L 92 245 Z" fill="transparent" aria-label="위장 - 소화불량·구토"/>
+                <path class="picker-hotspot" data-body-part="abdomen" data-filter-keywords="변비,설사,장조" d="M 92 245 L 148 245 L 145 274 L 95 274 Z" fill="transparent" aria-label="배 - 변비·설사"/>
+                <path class="picker-hotspot" data-body-part="abdomen" data-filter-keywords="혈허,소변,빈뇨,신허" d="M 95 274 L 145 274 L 145 302 L 95 302 Z" fill="transparent" aria-label="하복부 - 혈허·빈뇨"/>
+                <path class="picker-hotspot" data-body-part="abdomen" data-filter-keywords="생리,월경,안태,산후,부인,임신,유산,오조,통경,갱년기" d="M 105 302 L 135 302 L 132 325 L 108 325 Z" fill="transparent" aria-label="골반 - 생리·안태"/>
+                <path class="picker-hotspot" data-body-part="arms" data-filter-keywords="관절,요통,풍습,근골,타박" d="M 55 105 L 92 95 L 92 195 L 62 198 Z" fill="transparent" aria-label="왼팔 - 관절·요통"/>
+                <path class="picker-hotspot" data-body-part="arms" data-filter-keywords="관절,요통,풍습,근골,타박" d="M 185 105 L 148 95 L 148 195 L 178 198 Z" fill="transparent" aria-label="오른팔 - 관절·요통"/>
+                <path class="picker-hotspot" data-body-part="legs" data-filter-keywords="관절,부종,냉증,수족" d="M 95 302 L 112 308 L 112 412 L 92 410 Z" fill="transparent" aria-label="왼다리 - 관절·부종"/>
+                <path class="picker-hotspot" data-body-part="legs" data-filter-keywords="관절,부종,냉증,수족" d="M 145 302 L 128 308 L 128 412 L 148 410 Z" fill="transparent" aria-label="오른다리 - 관절·부종"/>
+                <path class="picker-hotspot" data-body-part="torso" data-filter-keywords="기혈,피로,허약,기력,원기,보약,노화" d="M 105 120 L 135 120 L 138 245 L 102 245 Z" fill="transparent" aria-label="전신 - 허약·피로·보양"/>
+              </svg>
+            </figure>
+          </div>
+        </div>
+
+        <!-- 우측: 증상 + 처방 목록 -->
+        <div class="picker-disease-panel">
+          <div id="picker-type-filters" class="picker-type-filters">
+            <button type="button" class="picker-type-btn active" data-type="" title="다섯 가지 제형의 처방을 모두 표시">
+              <span class="picker-type-name">전체</span>
+              <span class="picker-type-mini">모든 제형</span>
+            </button>
+            <button type="button" class="picker-type-btn" data-type="tang" data-img="asset/prescription/herbal_tang.png" title="탕(湯) — 물에 끓여 우려낸 즙. 흡수가 빠르고 급성에 적합">
+              <span class="picker-type-name">탕(湯)</span>
+              <span class="picker-type-mini">끓인 즙</span>
+            </button>
+            <button type="button" class="picker-type-btn" data-type="hwan" data-img="asset/prescription/herbal_whan.png" title="환(丸) — 꿀로 반죽해 둥글게 빚은 알약. 효력이 길고 휴대 편리">
+              <span class="picker-type-name">환(丸)</span>
+              <span class="picker-type-mini">둥근 알약</span>
+            </button>
+            <button type="button" class="picker-type-btn" data-type="san" data-img="asset/prescription/herbal_san.png" title="산(散) — 약재를 곱게 빻은 가루. 위장에 직접 작용해 빠르게 흡수">
+              <span class="picker-type-name">산(散)</span>
+              <span class="picker-type-mini">고운 가루</span>
+            </button>
+            <button type="button" class="picker-type-btn" data-type="go" data-img="asset/prescription/herbal_go.png" title="고(膏) — 오래 졸여 진하게 만든 약엿. 자양강장·만성 질환에 적합">
+              <span class="picker-type-name">고(膏)</span>
+              <span class="picker-type-mini">졸인 약엿</span>
+            </button>
+            <button type="button" class="picker-type-btn" data-type="dan" data-img="asset/prescription/herbal_dan.png" title="단(丹) — 광물·약재를 단련해 빚은 환. 응급·중증·강력 작용">
+              <span class="picker-type-name">단(丹)</span>
+              <span class="picker-type-mini">단련 환약</span>
+            </button>
+            <div id="picker-type-preview" class="picker-type-preview" aria-hidden="true">
+              <img id="picker-type-preview-img" alt="">
+              <span id="picker-type-preview-cap" class="picker-type-preview-cap"></span>
+            </div>
+          </div>
+          <p id="picker-type-desc" class="picker-type-desc">다섯 가지 제형의 처방을 모두 표시합니다</p>
+          <div class="picker-disease-header">
+            <span id="picker-filter-label" class="picker-filter-label">전체 처방</span>
+            <button type="button" id="picker-reset-filter" class="picker-reset-btn" aria-hidden="true">전체 보기</button>
+          </div>
+          <div id="picker-disease-grid" class="picker-disease-grid"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 탕 모드 1인칭 배경 (영상) — 약탕기·소쿠리·김 효과 모두 포함된 단일 컷 -->
+    <video id="herb-game-bg-video" class="herb-game-bg-video" autoplay loop muted playsinline
+           src="asset/prescription/tang_background.mp4?v=3"></video>
+
+    <!-- 환 모드 프레임 캐시 소스 (보이지 않음, JS에서 프레임 추출용) -->
+    <video id="herb-game-hwan-source" muted playsinline preload="auto"
+           src="asset/prescription/whan_background.mp4"
+           style="position:absolute; left:-9999px; top:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;"
+           crossorigin="anonymous"></video>
+
+    <!-- 산 모드 프레임 캐시 소스 (보이지 않음, JS에서 프레임 추출용) -->
+    <video id="herb-game-san-source" muted playsinline preload="auto"
+           src="asset/prescription/san_background.mp4"
+           style="position:absolute; left:-9999px; top:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;"
+           crossorigin="anonymous"></video>
+
+    <!-- 고 모드 프레임 캐시 소스 (보이지 않음, JS에서 프레임 추출용) -->
+    <video id="herb-game-go-source" muted playsinline preload="auto"
+           src="asset/prescription/go_background.mp4"
+           style="position:absolute; left:-9999px; top:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;"
+           crossorigin="anonymous"></video>
+
+    <!-- 단 모드 프레임 캐시 소스 (보이지 않음, JS에서 프레임 추출용)
+         1~3초 = 단을 든다 / 5초 이후 = 금박을 두른다 (4초 구간은 사용 안 함) -->
+    <video id="herb-game-dan-source" muted playsinline preload="auto"
+           src="asset/prescription/dan_background.mp4"
+           style="position:absolute; left:-9999px; top:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;"
+           crossorigin="anonymous"></video>
+
+    <canvas id="herb-game-canvas" class="herb-game-canvas"></canvas>
+    <video id="herb-game-video" class="herb-game-video" autoplay playsinline muted></video>
+
+    <!-- 약탕기 (탕 외 모드용 기존 이모지 표시) -->
+    <div id="herb-game-pot" class="herb-game-pot">
+      <div class="pot-glow-ring"></div>
+      <span class="herb-game-pot-icon">🫕</span>
+      <span class="herb-game-pot-label">약탕기에 넣기</span>
+    </div>
+
+    <div id="herb-game-collected" class="herb-game-collected"></div>
+
+    <!-- ④ 코치마크 -->
+    <div id="herb-game-coach" class="herb-game-coach" aria-hidden="true">
+      <button type="button" id="herb-coach-close" class="coach-close-btn" aria-label="닫기" title="닫기">&times;</button>
+      <div class="coach-inner">
+        <div class="coach-center">
+          <div class="coach-hand-hint" aria-hidden="true">
+            <img src="asset/prescription/hand.svg" alt="" class="coach-hand-svg" />
+            <p class="coach-hand-caption">웹캠으로 손동작을 인식해요</p>
+          </div>
+          <div class="coach-step">
+            <div class="coach-bubble coach-bubble-center">
+              <p class="coach-title">약재를 손으로 잡으세요</p>
+              <p class="coach-body">엄지와 검지를 붙여 약재를 집고,<br>손을 내려 약탕기에 넣으세요</p>
+            </div>
+          </div>
+          <button type="button" id="herb-coach-dismiss" class="coach-dismiss-btn">
+            처방하기
+          </button>
+        </div>
+        <div class="coach-step coach-step--right">
+          <div class="coach-arrow coach-arrow-right">→</div>
+          <div class="coach-bubble">
+            <p class="coach-title">처방 정보</p>
+            <p class="coach-body">환자의 증상과 처방에 필요한<br>약재를 확인하세요</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ 완성 화면 -->
+    <div id="herb-game-complete" class="herb-game-complete" aria-hidden="true">
+      <div class="herb-game-complete-inner">
+        <div class="herb-game-complete-seal">
+          <span class="seal-ring"></span>
+          <span class="seal-ring seal-ring-2"></span>
+          <img class="seal-icon" src="asset/prescription/finish_tang.png" alt="처방 완료" />
+        </div>
+        <p id="herb-game-complete-formula" class="herb-game-complete-formula"></p>
+        <p id="herb-game-complete-patient-msg" class="herb-game-complete-patient-msg"></p>
+        <button type="button" id="herb-game-complete-close" class="herb-game-complete-btn">확인</button>
+      </div>
+    </div>
+  </div>
+
+
+  <button type="button" id="top-btn" class="top-btn" aria-label="맨 위로" title="맨 위로">↑</button>
+
+  <script src="data/effect-map.js"></script>
+  <script src="data/herb-origin.js"></script>
+  <script src="js/herb-effect-mapper.js"></script>
+  <script src="data/herb-data.js"></script>
+  <script src="data/prescriptions-data.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.min.js"></script>
+  <script src="js/herb-viewer.js"></script>
+  <script src="js/efficacy-universe-2d.js"></script>
+  <script type="module" src="js/efficacy-universe-3d.js"></script>
+  <script type="module" src="herb-glb-viewer.js"></script>
+  <script src="js/sfx.js"></script>
+  <script src="js/hand-herb-game.js"></script>
+  <script defer src="script.js"></script>
+  <script type="module" src="js/body-viewer-3d.js"></script>
+  <script type="module" src="js/patient-3d.js"></script>
+  <script type="module" src="js/lotus-parts-3d.js"></script>
+  <script>
+    /* sticky 헤더 실제 높이를 --header-h 로 노출 — 개요 탭 섹션 스냅 스크롤의
+       스크롤 오프셋/섹션 높이 계산에 사용 (css/data.css 참고).
+       헤더는 탭/검색창 표시 여부에 따라 높이가 바뀌므로 ResizeObserver 로 추적. */
+    (function () {
+      var header = document.querySelector('.header-glass');
+      if (!header) return;
+      var root = document.documentElement;
+      function syncHeaderHeight() {
+        root.style.setProperty('--header-h', Math.round(header.getBoundingClientRect().height) + 'px');
+      }
+      syncHeaderHeight();
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(syncHeaderHeight).observe(header);
+      }
+      window.addEventListener('resize', syncHeaderHeight);
+      window.addEventListener('load', syncHeaderHeight);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+node_modules/
+
+# 빌드 산출물 (effect.json에서 재생성 가능)
+effect-herb-tags.json
+
+# macOS
+.DS_Store

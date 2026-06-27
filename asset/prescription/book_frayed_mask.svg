@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="230" viewBox="0 0 320 230" preserveAspectRatio="none">
+  <defs>
+    <!-- 가장자리를 불규칙하게 흩뜨려 종이가 헤진 느낌 -->
+    <filter id="fray" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022 0.05" numOctaves="4" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="7"
+        xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <!-- 안쪽은 꽉 찬 흰색(보임), 헤진 결로 가장자리만 변형 -->
+  <rect x="4" y="4" width="312" height="222" rx="3" fill="#fff" filter="url(#fray)"/>
+</svg>

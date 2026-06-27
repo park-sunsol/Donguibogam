@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Testimonial Cards — Scattered Fan + Hover Interaction</title>
+<style>
+  /* ─────────────────────────────────────────────────────────────
+     의존성 0 — 외부 CDN/빌드 없이 단일 파일로 동작.
+     file:// 로 더블클릭하거나 시크릿모드로 열어도 항상 렌더링됨.
+     ───────────────────────────────────────────────────────────── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #f4f4f5;
+    color: #18181b;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+      "Malgun Gothic", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 72rem; margin: 0 auto; padding: 4rem 1.5rem 5rem; }
+
+  .head { text-align: center; margin-bottom: 2.5rem; }
+  .eyebrow {
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; color: #6366f1;
+  }
+  .title {
+    margin-top: 0.75rem;
+    font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 800;
+    letter-spacing: -0.02em; color: #18181b;
+  }
+  .subtitle { margin-top: 0.75rem; color: #71717a; }
+
+  /* ── 무대(stage) — 모바일 우선: 세로 스택 ── */
+  .stage {
+    display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+  }
+
+  /* ── 카드(기본/비활성: 흰 카드) ── */
+  .card {
+    --from: #6366f1; --to: #7c3aed; --star: #6366f1;  /* 카드별 인라인 override */
+    position: relative;
+    display: flex; flex-direction: column;
+    width: 100%; max-width: 24rem;
+    padding: 1.6rem;
+    border-radius: 1.5rem;
+    background: #ffffff;
+    color: #18181b;
+    border: 1px solid #f1f1f3;
+    box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.30);
+    cursor: default;
+    outline: none;
+
+    /* ── [핵심 인터랙션] 전환: transform/opacity/box-shadow/filter 기반(GPU) ──
+       easing 은 cubic-bezier 로 자연스럽게, 380ms */
+    transition:
+      transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity   380ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 380ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 380ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter    380ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, opacity;
+    transform: translateZ(0);
+  }
+
+  /* ── [핵심 인터랙션] 형제 흐리기 ──
+     무대에 호버/포커스가 들어오면 모든 카드를 살짝 죽인다(opacity↓ + 채도↓). */
+  .stage:hover .card,
+  .stage:focus-within .card { opacity: 0.4; filter: saturate(0.55); }
+
+  /* ── [핵심 인터랙션] 활성 카드 복귀(형제 흐리기보다 우선순위 높게) ── */
+  .stage:hover .card:hover,
+  .stage:focus-within .card:focus { opacity: 1; filter: none; }
+
+  /* ── [핵심 인터랙션] 활성 카드 자체: 액센트 그라데이션 채움 + 떠오름 + 확장 그림자 ── */
+  .card:hover,
+  .card:focus {
+    transform: translateY(-8px) scale(1.03);
+    background: linear-gradient(135deg, var(--from), var(--to));
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 40px 70px -20px rgba(0, 0, 0, 0.55);
+    z-index: 50;
+  }
+
+  /* 키보드 포커스 링(마우스 클릭과 구분) */
+  .card:focus-visible { outline: 2px solid #18181b; outline-offset: 3px; }
+
+  /* 별점 */
+  .stars { display: flex; gap: 0.25rem; color: var(--star); transition: color 300ms ease; }
+  .stars svg { width: 1rem; height: 1rem; }
+  .card:hover .stars,
+  .card:focus .stars { color: #ffffff; }
+
+  /* 본문: 활성 시 미세하게 스케일↑/완전 불투명으로 강조 */
+  .quote {
+    margin-top: 1.25rem; font-size: 0.95rem; line-height: 1.65;
+    opacity: 0.9; transform-origin: top left;
+    transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 380ms ease;
+  }
+  .card:hover .quote,
+  .card:focus .quote { opacity: 1; transform: scale(1.02); }
+
+  /* 구분선 */
+  .divider { margin: 1.25rem 0; border: 0; border-top: 1px solid #e4e4e7; transition: border-color 300ms ease; }
+  .card:hover .divider,
+  .card:focus .divider { border-top-color: rgba(255, 255, 255, 0.25); }
+
+  /* 푸터 */
+  .foot { margin-top: auto; display: flex; align-items: center; gap: 0.75rem; }
+  .avatar {
+    flex: 0 0 auto; width: 2.5rem; height: 2.5rem; border-radius: 0.75rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700; color: #fff;
+    background: linear-gradient(135deg, var(--from), var(--to));
+    transition: background 300ms ease;
+  }
+  .card:hover .avatar,
+  .card:focus .avatar { background: rgba(255, 255, 255, 0.2); }
+  .name { font-size: 0.875rem; font-weight: 600; }
+  .role { font-size: 0.75rem; color: #a1a1aa; transition: color 300ms ease; }
+  .card:hover .role,
+  .card:focus .role { color: rgba(255, 255, 255, 0.7); }
+
+  /* ── 데스크톱(≥1024px): 흩뿌려진 부채꼴(scattered fan) ──
+     카드를 절대배치로 겹쳐 흩뿌리고 각기 다른 회전각/z-index 부여. */
+  @media (min-width: 1024px) {
+    .stage {
+      display: block; position: relative;
+      height: 640px; max-width: 56rem; margin: 0 auto;
+    }
+    .card {
+      position: absolute;
+      left: var(--x); top: var(--y);
+      width: 280px; max-width: none;
+      z-index: var(--z);
+      /* 좌표 중심 정렬 + 카드별 회전 */
+      transform: translate(-50%, -50%) rotate(var(--rot));
+    }
+    /* [핵심 인터랙션] 활성: 회전을 펴고(rotate 0) 위로 떠오르며 확대 + 맨 앞으로 */
+    .card:hover,
+    .card:focus {
+      transform: translate(-50%, -50%) translateY(-22px) rotate(0deg) scale(1.05);
+      z-index: 50;
+    }
+  }
+
+  /* 접근성: 모션 최소화 설정 시 전환/변형 제거 */
+  @media (prefers-reduced-motion: reduce) {
+    .card, .quote, .stars, .divider, .role, .avatar { transition: none !important; }
+    .card:hover, .card:focus { transform: none !important; }
+    @media (min-width: 1024px) {
+      .card { transform: translate(-50%, -50%) rotate(var(--rot)) !important; }
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <p class="eyebrow">Testimonials</p>
+      <h1 class="title">Loved by teams everywhere</h1>
+      <p class="subtitle">카드에 마우스를 올리거나 Tab으로 포커스해 보세요.</p>
+    </header>
+
+    <!-- 무대: 카드가 채워지는 곳 -->
+    <div class="stage" id="stage"></div>
+  </main>
+
+  <script>
+    /* ── 데이터: 본문 + 액센트 그라데이션(--from/--to) + 별점색 + 배치(좌표·회전·z) ── */
+    var TESTIMONIALS = [
+      { quote: "Really useful system. We got amazing service for our company hotel bookings for our upcoming events. Everything just works.",
+        name: "Barry W.", role: "CEO of Techless", rating: 5, initials: "BW",
+        from: "#10b981", to: "#0d9488", star: "#0ea5e9", x: "27%", y: "55%", rot: "-8deg", z: 10 },
+      { quote: "Nimbus lets us launch new features in hours, not days. Total game-changer for how fast we can ship to customers.",
+        name: "Devon R.", role: "Product Lead", rating: 5, initials: "DR",
+        from: "#6366f1", to: "#7c3aed", star: "#6366f1", x: "44%", y: "34%", rot: "-3deg", z: 20 },
+      { quote: "Nimbus helped streamline our entire workflow in just a few weeks. The team loves how easy it is to navigate, and we've already seen a major boost in productivity.",
+        name: "Sarah K.", role: "Operations Lead", rating: 5, initials: "SK",
+        from: "#0ea5e9", to: "#2563eb", star: "#0ea5e9", x: "71%", y: "44%", rot: "9deg", z: 14 },
+      { quote: "We evaluated eight platforms before landing on Nimbus. It wasn't just the feature set — it was the pace of updates and the support behind it.",
+        name: "Mara L.", role: "CTO", rating: 5, initials: "ML",
+        from: "#f59e0b", to: "#f97316", star: "#f59e0b", x: "46%", y: "68%", rot: "-6deg", z: 24 },
+      { quote: "Nimbus took a huge load off our dev team. Integrations were quick, and the platform is so reliable that we hardly ever need to check in. Highly recommended.",
+        name: "Thomas H.", role: "Tech Lead", rating: 5, initials: "TH",
+        from: "#27272a", to: "#000000", star: "#3b82f6", x: "61%", y: "61%", rot: "7deg", z: 32 }
+    ];
+
+    var STAR_PATH = "M10 1.5l2.6 5.27 5.82.85-4.21 4.1.99 5.79L10 14.77 4.8 17.5l.99-5.79L1.58 7.62l5.82-.85L10 1.5z";
+
+    function esc(s) {
+      return String(s).replace(/[&<>"]/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+      });
+    }
+
+    function starsHtml(n) {
+      var s = "";
+      for (var i = 0; i < n; i++) {
+        s += '<svg viewBox="0 0 20 20" fill="currentColor"><path d="' + STAR_PATH + '"/></svg>';
+      }
+      return '<div class="stars" aria-hidden="true">' + s + '</div>';
+    }
+
+    var html = "";
+    TESTIMONIALS.forEach(function (t) {
+      // 카드별 색/배치는 CSS 커스텀 프로퍼티로 인라인 전달
+      var vars = "--from:" + t.from + ";--to:" + t.to + ";--star:" + t.star +
+                 ";--x:" + t.x + ";--y:" + t.y + ";--rot:" + t.rot + ";--z:" + t.z + ";";
+      // 호버뿐 아니라 키보드 포커스도 동일하게 동작하도록 tabindex=0
+      html += '<article class="card" tabindex="0" style="' + vars + '"' +
+              ' aria-label="' + esc(t.name + ", " + t.role + " testimonial") + '">';
+      html += starsHtml(t.rating);
+      html += '<p class="quote">' + esc(t.quote) + '</p>';
+      html += '<hr class="divider" />';
+      html += '<div class="foot">';
+      html += '<div class="avatar" aria-hidden="true">' + esc(t.initials) + '</div>';
+      html += '<div><div class="name">' + esc(t.name) + '</div>' +
+              '<div class="role">' + esc(t.role) + '</div></div>';
+      html += '</div>';
+      html += '</article>';
+    });
+
+    document.getElementById("stage").innerHTML = html;
+  </script>
+</body>
+</html>

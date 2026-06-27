@@ -1,0 +1,3473 @@
+/* ── 희귀 약재 섹션 (좌: 상세 / 우: 목록) ──────────────────────────── */
+.rare-herbs-carousel-section {
+  margin: 0 0 2rem;
+  /* 자체 쌓임 맥락 생성 — 카드 내부 z-index(겹침 변주·활성 카드 60 등)가
+     루트로 새어나가 sticky 헤더(z 50)·필터(z 40) 위로 떠오르지 않도록 가둔다. */
+  position: relative;
+  isolation: isolate;
+}
+
+.rhc-dashboard {
+  overflow: visible;
+}
+
+.rhc-dashboard-header {
+  align-items: center;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   희귀 약재 — 가로 스와이프 카드 덱 (개별 약재 20종) + 클릭 떠오름 인터랙션
+   카드를 위아래 여러 방향으로 흩뿌리고, 가로로 스와이프해 탐색.
+   카드 클릭 시 떠오르며 "지금 쓰이지 않는 이유"가 보인다.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── 가로 스와이프 트랙 — 뷰포트 전체 폭(풀블리드) ── */
+.rhc-track {
+  display: flex;
+  align-items: center;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  overflow-x: auto;
+  overflow-y: visible;              /* 위아래로 흩뿌려진/떠오르는 카드 여유는 패딩으로 확보 */
+  padding: 96px clamp(1.5rem, 5vw, 5rem) 112px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.rhc-track::-webkit-scrollbar { height: 0; display: none; }
+
+/* ── 개별 약재 카드 (위치/변형/겹침 담당, 자식이 밖으로 나갈 수 있게 overflow는 풀어둠) ── */
+.rhc-card {
+  --from: #475569; --to: #1e293b;   /* 카테고리별 인라인 override */
+  --rot: 0deg; --dy: 0px; --z: 1;
+  position: relative;
+  z-index: var(--z);                /* 겹침 순서 변주 (왼쪽이 무조건 아래로 깔리지 않게) */
+  flex: 0 0 auto;
+  width: 224px;
+  height: 334px;
+  margin-left: -58px;               /* 더 많이 겹쳐 흩뿌린 느낌 */
+  cursor: pointer;
+  outline: none;
+  scroll-snap-align: center;
+  /* ── [핵심 인터랙션] transform 기반(GPU), cubic-bezier 380ms ── */
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  /* 흩뿌림: 회전 + 세로 오프셋 */
+  transform: rotate(var(--rot)) translateY(var(--dy));
+}
+.rhc-card:first-child { margin-left: 0; }
+
+/* 트랙 끝 스페이서 — 평소엔 0(노사 옆 여백 없음),
+   카드를 열었을 때만 폭이 생겨 마지막 카드를 가운데로 스크롤할 여유를 만든다.
+   덕분에 활성 시 우측 "이유" 카드가 화면 끝에 붙지 않는다. */
+.rhc-track-spacer {
+  flex: 0 0 0px;
+  height: 1px;
+  pointer-events: none;
+}
+.rhc-track.has-active .rhc-track-spacer {
+  flex-basis: clamp(260px, 30vw, 420px);
+}
+
+/* 카드의 보이는 면(둥근 모서리·그림자·내용) */
+.rhc-card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: #ffffff;
+  color: #1a1200;
+  border: 1px solid rgba(120, 90, 40, 0.16);
+  box-shadow: 0 22px 44px -20px rgba(0, 0, 0, 0.30), 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── [핵심 인터랙션] 형제 흐리기 ──
+   떠오른 카드가 있으면, 비활성 카드 면 위에 "흰색 베일"을 덮는다.
+   카드 자체에 opacity 를 주지 않으므로(불투명 유지) 겹친 카드끼리 글자가 비쳐 보이지 않는다. */
+.rhc-card-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+.rhc-track.has-active .rhc-card:not(.is-active) .rhc-card-face::after { opacity: 0.8; }
+
+/* 클릭 가능 힌트: 호버 시 살짝만 들림 */
+.rhc-card:hover:not(.is-active) {
+  transform: rotate(var(--rot)) translateY(calc(var(--dy) - 10px));
+}
+/* 키보드 포커스 링 */
+.rhc-card:focus-visible .rhc-card-face { outline: 2px solid #1a1200; outline-offset: 3px; }
+
+/* ── [핵심 인터랙션] 클릭으로 떠오른 카드: 회전 펴고 위로 떠오름 + 맨 앞 ── */
+.rhc-card.is-active {
+  transform: rotate(0deg) translateY(-44px) scale(1.04);
+  z-index: 60;
+}
+.rhc-card.is-active .rhc-card-face {
+  box-shadow: 0 50px 80px -24px rgba(0, 0, 0, 0.52);
+}
+
+/* 약재 사진 */
+.rhc-card-photo {
+  position: relative;
+  width: 100%;
+  height: 192px;
+  flex-shrink: 0;
+  background: #efe9dc;
+  overflow: hidden;
+}
+.rhc-card-photo img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+
+.rhc-card-info {
+  flex: 1 1 auto;
+  display: flex; flex-direction: column;
+  padding: 0.95rem 1.05rem 1.1rem;
+}
+.rhc-card-hanja {
+  margin: 0 0 0.2rem;
+  font-size: 0.78rem; font-weight: 600; color: #a07830;
+}
+.rhc-card-eng { color: #b8b0a0; font-weight: 400; margin-left: 0.3rem; }
+.rhc-card-name {
+  margin: 0 0 0.45rem;
+  font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; color: #1a1200;
+}
+.rhc-card-desc {
+  margin: 0;
+  font-size: 0.82rem; line-height: 1.5; color: #555;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* ── [핵심 인터랙션] "지금 쓰이지 않는 이유" — 옆(다음)에 별도 카드로 등장 ──
+   활성 카드는 약재 사진·설명을 그대로 보여주고, 이유는 오른쪽에 새 카드로 펼쳐진다.
+   내부는 멸종위기 reason 과 동일한 빨간 블록(.rare-popup-reason-*) 스타일. */
+.rhc-card-reason {
+  position: absolute;
+  top: 0;
+  left: 0;                          /* 평소엔 카드 위에 겹쳐 숨김(레이아웃 폭 차지 안 함) */
+  width: 224px;
+  height: 334px;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 1.4rem 1.45rem;
+  border-radius: 1.25rem;
+  /* "왜 사라졌을까"(.endangered-detail-threat)와 동일한 연한 빨강 배경 — 흰 카드 위에 합성 */
+  background: linear-gradient(rgba(192, 57, 43, 0.06), rgba(192, 57, 43, 0.06)), #ffffff;
+  border: 1px solid rgba(192, 57, 43, 0.18);
+  box-shadow: 0 50px 80px -24px rgba(0, 0, 0, 0.52);
+  opacity: 0;
+  transform: scale(0.96);
+  transform-origin: left center;
+  pointer-events: none;
+  transition: opacity 280ms ease, transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  overflow-y: auto;
+}
+/* 활성 시 오른쪽("다음 카드" 자리)으로 이동하며 등장 */
+.rhc-card.is-active .rhc-card-reason {
+  opacity: 1;
+  transform: translateX(calc(100% + 14px)) scale(1);
+  pointer-events: auto;
+}
+/* 이유 카드: 빨간 영역이 카드 전체를 채우도록 내부 블록의 박스 장식을 제거 */
+.rhc-card-reason .rare-popup-reason-block {
+  background: transparent;
+  border-left: none;
+  border-radius: 0;
+  padding: 0;
+}
+.rhc-card-reason .rare-popup-reason-label {
+  color: #c0392b;
+  margin-bottom: 0.7rem;
+  letter-spacing: 0.02em;
+}
+.rhc-card-reason .rare-popup-reason {
+  color: #555;
+}
+
+/* 접근성: 모션 최소화 설정 시 전환만 제거(클릭 시 상태 변화는 즉시 적용) */
+@media (prefers-reduced-motion: reduce) {
+  .rhc-card, .rhc-card-face, .rhc-card-reason, .rhc-card-face::after { transition: none !important; }
+  .rhc-card:hover:not(.is-active) { transform: rotate(var(--rot)) translateY(var(--dy)) !important; }
+  .rhc-card.is-active .rhc-card-reason { transform: translateX(calc(100% + 14px)) !important; }
+}
+
+/* 오버레이 */
+.rare-herbs-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  align-items: center;
+  justify-content: center;
+}
+
+.rare-herbs-overlay--open {
+  display: flex;
+}
+
+.rare-herbs-overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 8, 4, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: rareBackdropIn 0.2s ease forwards;
+}
+
+@keyframes rareBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.rare-herbs-popup {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 253, 245, 1);
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.38), 0 2px 12px rgba(0,0,0,0.15);
+  width: min(480px, 90vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  animation: rarePopupIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  border: 1px solid rgba(180, 150, 80, 0.3);
+}
+
+@keyframes rarePopupIn {
+  from { opacity: 0; transform: scale(0.88) translateY(24px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.rare-herbs-popup-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: rgba(0,0,0,0.07);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  z-index: 2;
+}
+
+.rare-herbs-popup-close:hover {
+  background: rgba(0,0,0,0.15);
+}
+
+.rare-herbs-popup-img-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
+  display: block;
+}
+
+.rare-herbs-popup-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.rare-herbs-popup-body {
+  padding: 1.4rem 1.6rem 1.8rem;
+}
+
+.rare-popup-hanja-line {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 calc(0.25rem + 2px);
+  overflow: hidden;
+}
+
+.rare-popup-hanja {
+  font-size: 0.85rem;
+  color: #a07830;
+  letter-spacing: 0.06em;
+}
+
+.rare-popup-english {
+  font-size: 0.78rem;
+  color: #8a6a3a;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+.rare-popup-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1200;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.75rem;
+}
+
+.rare-popup-desc {
+  font-size: 0.92rem;
+  line-height: 1.75;
+  color: #3a3020;
+  margin: 0 0 1rem;
+}
+
+.rare-popup-reason-block {
+  background: rgba(192, 57, 43, 0.06);
+  border-left: 3px solid #c0392b;
+  border-radius: 0 8px 8px 0;
+  padding: 0.85rem 1rem;
+}
+
+.rare-popup-reason-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #c0392b;
+  margin-bottom: 0.25rem;
+}
+
+.rare-popup-reason {
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: #555;
+  margin: 0;
+}
+
+/* 펼쳐서보기 버튼 */
+/* 멸종위기 지역 필터 칩(.endangered-region-chip)과 동일 스타일 */
+.rhc-expand-btn {
+  flex-shrink: 0;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #bbb;
+  border-radius: var(--r-pill);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: calc(var(--text-xs) + 2px);
+  font-weight: 500;
+  color: var(--ink-3);
+  transition: background var(--dur-base), color var(--dur-base), border-color var(--dur-base);
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.rhc-expand-btn:hover {
+  background: rgba(245, 245, 245, 0.5);
+  border-color: #999;
+}
+.rhc-expand-btn .rhc-expand-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* 펼쳐서보기 전체 오버레이 */
+.rhc-expand-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9100;
+  overflow-y: auto;
+}
+.rhc-expand-overlay--open {
+  display: block;
+}
+.rhc-expand-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 4, 1, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: rareBackdropIn 0.25s ease forwards;
+}
+.rhc-expand-content {
+  position: relative;
+  z-index: 1;
+  width: min(1040px, 94vw);
+  margin: 0 auto;
+  padding: 2rem 0 3.5rem;
+}
+.rhc-expand-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 0.2rem 1.2rem;
+}
+.rhc-expand-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.08em;
+  margin: 0;
+  text-transform: uppercase;
+}
+.rhc-expand-close {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: rgba(255,255,255,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.rhc-expand-close:hover { background: rgba(255,255,255,0.22); }
+.rhc-expand-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 14px;
+}
+.rhc-expand-card {
+  background: linear-gradient(160deg, var(--card-light, #2a4a3e), var(--card-bg, #1a2a1a));
+  border: none;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  transition: transform 0.18s, box-shadow 0.18s;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 0;
+  transform: translateY(18px) scale(0.94);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+}
+.rhc-expand-overlay--open .rhc-expand-card {
+  animation: rhcCardReveal 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--stagger-i, 0) * 0.028s);
+}
+@keyframes rhcCardReveal {
+  from { opacity: 0; transform: translateY(18px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.rhc-expand-card:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+.rhc-expand-card-img-wrap {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  position: relative;
+  overflow: hidden;
+}
+.rhc-expand-card-img-wrap img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rhc-expand-card-name {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  text-align: center;
+  padding: 16px 4px 8px;
+  background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, transparent 100%);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 모달 열릴 때 body 스크롤 잠금 */
+body.rare-herbs-modal-open {
+  overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .rhc-expand-grid {
+    grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+    gap: 10px;
+  }
+  .rhc-expand-content {
+    padding: 1.2rem 0 2.5rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   멸종위기 약재 정보 아카이빙 대시보드
+   ══════════════════════════════════════════════════════════════════ */
+.endangered-section {
+  margin: 3.5rem 0 2rem;
+}
+
+/* 메인카피 아래로 서브카피 배치 — flex(space-between) 해제하고 세로 정렬 */
+.endangered-header {
+  display: block;
+}
+
+/* 서브카피: overview-card-subtitle(1rem·#aaa)보다 더 작고 진하게 */
+.endangered-subtitle,
+.rhc-subtitle,
+.herb-parts-subtitle,
+.dashboard-block-subtitle {
+  font-size: 0.875rem;
+  color: #777;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.endangered-subtitle-right {
+  font-size: 1rem;
+  color: #aaa;
+  margin: 0;
+  line-height: 1.6;
+  text-align: right;
+  flex-shrink: 0;
+  max-width: 52%;
+}
+
+@media (max-width: 640px) {
+  .endangered-header {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .endangered-subtitle-right {
+    text-align: left;
+    max-width: 100%;
+  }
+}
+
+/* ── 레이아웃: 지도 + 정보 패널 ── */
+.endangered-body {
+  display: flex;
+  gap: 1.6rem;
+  align-items: flex-start;
+}
+
+/* ── 지도 영역 ── */
+.endangered-map-wrap {
+  flex: 1 1 55%;
+  min-width: 0;
+  position: relative;
+}
+
+.endangered-map-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 도 경계 */
+.endangered-province {
+  fill: #f5f1eb;
+  stroke: #d4cfc6;
+  stroke-width: 0.8;
+  cursor: pointer;
+  transition: fill 0.2s, stroke 0.2s;
+}
+
+.endangered-province:hover {
+  fill: #e8e2d6;
+  stroke: #a09880;
+}
+
+.endangered-province--active {
+  fill: #ddd5c4;
+  stroke: #8a7e68;
+  stroke-width: 1.2;
+}
+
+/* 도 이름 라벨 */
+.endangered-province-label {
+  font-size: 12px;
+  fill: #8a8070;
+  text-anchor: middle;
+  pointer-events: none;
+  font-weight: 500;
+}
+
+.endangered-province-label--dokdo {
+  font-size: 9px;
+}
+
+/* 울릉도·독도 인셋 박스 (실제 거리 비반영 표시) */
+.endangered-inset-box {
+  fill: rgba(255, 255, 255, 0.35);
+  stroke: #b8ae98;
+  stroke-width: 0.8;
+  stroke-dasharray: 3 2;
+}
+
+/* 약재 마커 */
+.endangered-marker {
+  cursor: pointer;
+  transition: transform 0.2s, filter 0.2s;
+  transform-origin: center;
+}
+
+.endangered-marker:hover {
+  filter: brightness(1.15) drop-shadow(0 0 4px rgba(0,0,0,0.3));
+}
+
+.endangered-marker--active circle {
+  stroke: #1a1a1a;
+  stroke-width: 2;
+}
+
+/* 마커 pulse 효과 */
+.endangered-marker-pulse {
+  animation: endPulse 2.5s ease-out infinite;
+  transform-origin: center;
+}
+
+@keyframes endPulse {
+  0%   { r: 8; opacity: 0.5; }
+  100% { r: 22; opacity: 0; }
+}
+
+/* ── 범례 (클릭 시 등급 필터) ── */
+.endangered-legend {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.endangered-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #666;
+  transition: background var(--dur-base), color var(--dur-base);
+}
+
+.endangered-legend-item:hover {
+  background: rgba(245, 245, 245, 0.5);
+}
+
+.endangered-legend-item--active {
+  background: #e8e6e0;
+  color: #000;
+}
+
+.endangered-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── 정보 패널 ── */
+.endangered-info-panel {
+  flex: 1 1 42%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── 상세 팝업 모달 ── */
+.endangered-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0.2s, opacity 0.2s;
+}
+
+.endangered-modal[aria-hidden="false"] {
+  visibility: visible;
+  opacity: 1;
+}
+
+.endangered-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.endangered-modal-popup {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  max-width: 560px;
+  width: 92vw;
+  max-height: 85vh;
+  overflow: auto;
+}
+
+.endangered-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--chip-grey);
+  color: var(--ink-3);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--dur-fast);
+}
+
+.endangered-modal-close:hover {
+  background: #000;
+  color: #fff;
+}
+
+.endangered-modal-body .endangered-detail-card {
+  border: none;
+  border-radius: 14px;
+  margin: 0;
+}
+
+/* 선택된 약재 상세 카드 */
+.endangered-detail-card {
+  position: relative;
+  background: linear-gradient(135deg, #faf8f4 0%, #f0ede6 100%);
+  border: 1px solid #e0dbd0;
+  border-radius: 14px;
+  padding: 1.6rem 1.7rem;
+  animation: endDetailIn 0.3s ease forwards;
+}
+
+/* 팝업 우측 상단 약재 썸네일 */
+.endangered-detail-img {
+  position: absolute;
+  top: 1.6rem; /* 카드 패딩 상단 = 레벨 뱃지 윗변과 같은 시작 높이 */
+  right: 3.75rem; /* 모달 닫기 버튼(X)과 충분한 간격 */
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: none;
+  background: #fff;
+}
+
+/* 위협 요인 — 서술형 텍스트 블록 */
+.endangered-detail-threat {
+  margin: 1.1rem 0 0;
+  padding: 0.85rem 1rem;
+  background: rgba(192, 57, 43, 0.06);
+  border-left: 3px solid #c0392b;
+  border-radius: 0 8px 8px 0;
+}
+
+.endangered-detail-threat-title {
+  display: block;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #c0392b;
+  margin-bottom: 0.25rem;
+}
+
+.endangered-detail-threat p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: #555;
+}
+
+@keyframes endDetailIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.endangered-detail-level {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.25em 0.7em;
+  border-radius: 999px;
+  color: #fff;
+  margin-bottom: 0.8rem;
+}
+
+.endangered-detail-level--1 { background: #c0392b; }
+.endangered-detail-level--2 { background: #e67e22; }
+.endangered-detail-level--sea { background: #2471a3; }
+.endangered-detail-level--nm { background: #7d3c98; }
+.endangered-detail-level--vul { background: #d4a017; }
+.endangered-detail-level--lc { background: #7f8c8d; }
+
+.endangered-detail-name {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1a1200;
+  margin: 0 0 0.3rem;
+  letter-spacing: -0.02em;
+}
+
+.endangered-detail-hanja-latin {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 0.35em;
+  margin: 0 0 1.1rem;
+}
+
+.endangered-detail-hanja {
+  font-size: 0.82rem;
+  color: #a07830;
+  letter-spacing: 0.05em;
+}
+
+.endangered-detail-latin {
+  font-size: 0.78rem;
+  color: #888;
+  font-style: italic;
+}
+
+.endangered-detail-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.endangered-detail-label {
+  flex-shrink: 0;
+  color: #999;
+  min-width: 4.5em;
+  font-weight: 600;
+}
+
+.endangered-detail-value {
+  color: #3a3020;
+}
+
+.endangered-detail-desc {
+  font-size: 0.82rem;
+  color: #4a4030;
+  line-height: 1.75;
+  margin: 1.1rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid #e0dbd0;
+}
+
+.endangered-detail-source {
+  font-size: 0.7rem;
+  color: #998a78;
+  margin: 0.6rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e0dbd0;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+/* 지역 약재 리스트 */
+.endangered-herb-list-wrap {
+  position: relative;
+  margin-top: 0.8rem;
+}
+
+/* 필터 결과 없음 안내 */
+.endangered-empty {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 6rem 1rem 2.5rem;
+  text-align: center;
+}
+.endangered-empty[aria-hidden="false"] {
+  display: flex;
+}
+.endangered-empty-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #888;
+  line-height: 1.5;
+}
+.endangered-empty-reset {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: #555;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--dur-base);
+}
+.endangered-empty-reset:hover {
+  color: #000;
+}
+
+.endangered-herb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 460px;
+  overflow-y: auto;
+  /* 하단 여백을 넉넉히 두어, 마지막 약재가 페이드에 가려지지 않게 한다 */
+  padding-bottom: 52px;
+  /* 하단 그라데이션 페이드 — 리스트 내용 자체를 아래로 갈수록 투명하게 흐려
+     "더 스크롤된다"는 것을 시각적으로 안내한다. mask라 배경 텍스처와 자연스럽게 어우러진다. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 56px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 56px),
+    transparent 100%
+  );
+}
+
+.endangered-herb-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.8rem;
+  background: rgba(250, 248, 244, 0.5);
+  border: 1px solid #e8e4de;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.endangered-herb-chip:hover {
+  background: rgba(240, 237, 230, 0.5);
+  border-color: #d0c8b8;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+
+.endangered-herb-chip--active {
+  background: #eae5d8;
+  border-color: #b8a888;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+}
+
+.endangered-herb-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.endangered-herb-chip-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.endangered-herb-chip-level {
+  font-size: 0.68rem;
+  color: #888;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* 지역 필터 칩 */
+.endangered-region-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+/* 약재·처방탭 필터 버튼(.category-chips button)과 동일 스타일 */
+.endangered-region-chip {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #bbb;
+  border-radius: var(--r-pill);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: calc(var(--text-xs) + 2px);
+  font-weight: 500;
+  color: var(--ink-3);
+  flex-shrink: 0;
+  transition: background var(--dur-base), color var(--dur-base), border-color var(--dur-base);
+}
+
+.endangered-region-chip:hover {
+  background: rgba(245, 245, 245, 0.5);
+  border-color: #999;
+}
+
+.endangered-region-chip--active {
+  background: #e8e6e0;
+  border-color: #000;
+  color: #000;
+}
+
+/* ── 반응형 ── */
+@media (max-width: 768px) {
+  .endangered-body {
+    flex-direction: column;
+  }
+  .endangered-map-wrap {
+    flex: none;
+    width: 100%;
+  }
+  .endangered-info-panel {
+    flex: none;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .endangered-detail-name {
+    font-size: 1.1rem;
+  }
+}
+
+/* ════════════════════════════════════════════
+   약재 조합 게임 — 조선 의원 타이쿤
+   ════════════════════════════════════════════ */
+.herb-game-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+}
+.herb-game-overlay[aria-hidden="true"] {
+  display: none;
+}
+body.herb-game-active {
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════
+   타이쿤 HUD 헤더
+   ══════════════════════════════════════ */
+.herb-game-hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 60px;
+  height: 58px;
+  background: rgba(10, 8, 4, 0.97);
+  border-bottom: 1px solid rgba(200, 160, 80, 0.2);
+}
+.patient-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e05555;
+  box-shadow: 0 0 6px rgba(220, 60, 60, 0.8);
+  animation: statusPulse 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(220, 60, 60, 0.8); }
+  50% { opacity: 0.55; box-shadow: 0 0 3px rgba(220, 60, 60, 0.4); }
+}
+.patient-status-text {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #f08080;
+}
+.hud-center-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.hud-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(200, 160, 80, 0.55);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.herb-game-formula {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 340px;
+}
+/* progress bar는 rx-panel 안으로 이동 */
+.hud-progress-bar {
+  width: 100%;
+  height: 5px;
+  background: rgba(91, 58, 24, 0.12);
+  border: 0.5px solid rgba(91, 58, 24, 0.4);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.hud-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #5b3a18;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hud-progress-count {
+  font-size: 0.58rem;
+  font-weight: 500;
+  color: #5b3a18;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+  font-family: "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+.rx-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.rx-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.herb-game-close {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.4rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+  line-height: 1;
+}
+.herb-game-close:hover {
+  background: #fff;
+  border-color: #fff;
+  color: #000;
+}
+.herb-game-mute {
+  position: absolute;
+  right: 60px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, opacity 0.2s;
+  line-height: 0;
+  padding: 0;
+}
+.herb-game-mute:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.herb-game-mute.is-muted {
+  opacity: 0.55;
+}
+
+/* ══════════════════════════════════════
+   좌측 환자 패널 (흰 배경, 큰 캐릭터)
+   ══════════════════════════════════════ */
+/* (deprecated outer wrapper — 좌측 페이지로 통합됨) */
+.herb-game-patient {
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+.patient-card {
+  padding: 10px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+  animation: patientSlideIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+  position: relative;
+}
+
+/* ── 펼친 책의 한 페이지 ── */
+.book-page {
+  flex: 1 1 50%;
+  min-width: 0;
+  position: relative;
+  padding: 14px 11px 10px;
+  display: flex;
+  flex-direction: column;
+  color: #2a1808;
+  font-family: var(--font-sans);
+  background: transparent;
+  overflow: visible;
+}
+.book-page::after { display: none; }
+.book-page--left  { padding-right: 14px; }
+.book-page--right { padding-left:  14px; }
+.book-page::before { display: none; }
+.book-page-header {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  padding-bottom: 3px;
+  margin-bottom: 4px;
+  position: relative;
+}
+.book-page-header::after { display: none; }
+.book-page-title {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  color: #2a1808;
+  font-family: var(--font-sans);
+  padding: 1px 8px;
+  border-top: 1px solid #3a2410;
+  border-bottom: 1px solid #3a2410;
+}
+.book-page-footer { display: none; }
+.book-page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: visible;
+}
+.book-page--left .book-page-body {
+  align-items: center;
+}
+.book-page--left .patient-info { order: 1; }
+.book-page--left .patient-figure-container { order: 2; }
+.book-page--left .patient-presc-badge { order: 3; margin-top: 4px; margin-bottom: 0; }
+.book-page--right .book-page-body {
+  /* 넘어가는 장이 좌측(증상) 페이지까지 덮을 수 있도록 잘리지 않게 */
+  overflow: visible;
+}
+/* 넘어가는 우측 페이지가 좌측 증상 페이지 위에 렌더되도록 */
+.book-page--right { z-index: 3; }
+.book-page--left { z-index: 2; }
+@keyframes patientSlideIn {
+  0%   { opacity: 0; transform: translateX(-50px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.patient-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  background: rgba(255, 80, 80, 0.08);
+  border: 1px solid rgba(255, 80, 80, 0.2);
+  border-radius: 20px;
+  padding: 3px 10px 3px 6px;
+}
+.patient-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff4444;
+  animation: statusBlink 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes statusBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.patient-status-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #e03030;
+  letter-spacing: 0.08em;
+}
+.patient-figure-container {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.patient-body-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  /* 위·아래 페이드 — 인물 표시 영역 ~70% */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.4) 6%,
+    #000 15%,
+    #000 85%,
+    rgba(0, 0, 0, 0.4) 94%,
+    transparent 100%
+  );
+          mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.4) 6%,
+    #000 15%,
+    #000 85%,
+    rgba(0, 0, 0, 0.4) 94%,
+    transparent 100%
+  );
+}
+.patient-body-3d {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.patient-presc-badge {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(180, 40, 30, 0.22);
+  border: none;
+  border-radius: 100px;
+  padding: 2px 8px 2px 6px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+}
+.patient-presc-badge .patient-status-text {
+  font-size: 0.58rem;
+  color: #8a1f15;
+  letter-spacing: 0.16em;
+  font-weight: 500;
+}
+.patient-presc-badge .patient-status-dot { width: 5px; height: 5px; }
+.patient-presc-badge .patient-status-dot { width: 6px; height: 6px; }
+.patient-info {
+  text-align: center;
+  width: 100%;
+  padding-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.patient-symptom-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #7a5a2a;
+  margin: 0;
+  letter-spacing: 0.18em;
+  position: relative;
+  display: inline-block;
+}
+.patient-symptom-label::before,
+.patient-symptom-label::after { content: none; }
+.patient-disease-name {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: #2b1d0c;
+  line-height: 1.4;
+  margin: 0;
+  font-family: var(--font-sans);
+  /* 우측 처방명과 높이를 맞춤 */
+  min-height: 1.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* ══════════════════════════════════════
+   우측 처방 정보 패널 (타이쿤 스타일)
+   ══════════════════════════════════════ */
+.herb-game-rx-panel {
+  position: absolute;
+  bottom: 16px;
+  right: 12px;
+  /* 펼친 책: 가로:세로 ≈ 1.4 : 1 */
+  width: 228px;
+  aspect-ratio: 1.4 / 1;
+  max-height: calc(100vh - 90px);
+  z-index: 8;
+  pointer-events: none;
+  /* 헤진 가장자리 모양을 따라 떨어지는 입체 그림자 */
+  filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.4));
+  animation: rxPanelIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+/* ── 펼친 책 컨테이너 ── */
+.book-open {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  background:
+    /* 한지 얼룩 / 빛바램 (옅게) */
+    radial-gradient(ellipse at 18% 22%, rgba(140, 100, 50, 0.05), transparent 55%),
+    radial-gradient(ellipse at 82% 78%, rgba(140, 100, 50, 0.05), transparent 55%),
+    /* 가장자리로 갈수록 살짝 어두워지는 빛바램 */
+    radial-gradient(ellipse at 50% 50%, transparent 58%, rgba(80, 52, 18, 0.16) 100%),
+    /* 책 가운데 골 — 가는 음영 */
+    linear-gradient(90deg,
+      transparent 0%,
+      transparent calc(50% - 18px),
+      rgba(60, 35, 10, 0.05) calc(50% - 6px),
+      rgba(40, 22, 6, 0.15) 50%,
+      rgba(60, 35, 10, 0.05) calc(50% + 6px),
+      transparent calc(50% + 18px),
+      transparent 100%),
+    /* 한지 베이스 (불투명) */
+    #f3e6c4;
+  background-blend-mode:
+    normal, normal, multiply, normal, normal;
+  border-radius: 2px;
+  overflow: visible;
+  /* 겹쳐진 종이 더미(.book-sheet, 최대 z-index 6)보다 위 */
+  z-index: 10;
+  /* 가장자리를 불규칙하게 갉아 종이가 헤진(낡은) 느낌 */
+  -webkit-mask: url("../asset/prescription/book_frayed_mask.svg") center / 100% 100% no-repeat;
+          mask: url("../asset/prescription/book_frayed_mask.svg") center / 100% 100% no-repeat;
+}
+/* ── 책 아래 겹쳐진 종이 더미 (두께감) ── */
+.book-sheet {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: #e7d4a4;
+  -webkit-mask: url("../asset/prescription/book_frayed_mask.svg") center / 100% 100% no-repeat;
+          mask: url("../asset/prescription/book_frayed_mask.svg") center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+/* 겹쳐 깐 종이 3겹 — 색만 차분한 고서 표지 톤으로 (책 본체보다 짙음) */
+.book-sheet--1 { transform: translate(1px, 3px);  background: #c9a86f; z-index: 3; }
+.book-sheet--2 { transform: translate(2px, 6px);  background: #b8945a; z-index: 2; }
+.book-sheet--3 { transform: translate(3px, 9px);  background: #a67f48; z-index: 1; }
+/* 한지 섬유결 텍스처 — 책 위에 옅게 덮는 오버레이 */
+.book-texture {
+  position: absolute;
+  inset: 0;
+  background: url("../asset/main/background.png") center / cover no-repeat;
+  opacity: 0.2;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 0;
+}
+/* 페이지(텍스트)는 텍스처보다 위에 */
+.book-page { z-index: 2; }
+/* 책 중앙 세로 분할선 */
+.book-spine {
+  position: absolute;
+  left: 50%;
+  top: 4%;
+  bottom: 4%;
+  width: 0;
+  border-left: 1px solid rgba(0, 0, 0, 0.18);
+  transform: translateX(-0.5px);
+  pointer-events: none;
+  z-index: 1;
+}
+.book-open::before {
+  /* 좌측 페이지 안쪽 그림자 (골 옆) */
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  right: 50%;
+  width: 24px;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.06));
+  pointer-events: none;
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+.book-open::after {
+  /* 우측 페이지 안쪽 그림자 (골 옆) */
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  width: 24px;
+  background: linear-gradient(270deg, transparent, rgba(0,0,0,0.06));
+  pointer-events: none;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+@keyframes rxPanelIn {
+  0%   { opacity: 0; transform: translateX(20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.rx-panel-inner {
+  /* 책 페이지 본문 영역으로 통합 — book-page-body 규칙이 처리 */
+  padding: 0;
+  gap: 8px;
+}
+.rx-top { flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+.rx-progress-wrap { margin-top: 6px; margin-bottom: 6px; flex-shrink: 0; }
+.rx-formula-name {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #2a1808;
+  margin: 0;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-align: center;
+  /* 좌측 증상명과 높이를 맞춤 */
+  min-height: 1.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rx-divider { display: none; }
+.rx-herbs-label {
+  font-family: var(--font-sans);
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #3a2410;
+  margin: 0;
+}
+/* ── 책장 넘김 시스템 — 우측 처방 페이지가 책등(골)을 축으로 통째로 넘어가며
+      2페이지(좌·우 약재)가 드러남 ── */
+.book-page--right {
+  padding: 0;                 /* 패딩은 각 면(leaf-front/back, page2)이 가짐 */
+  perspective: 1400px;        /* 책장 넘김 원근 */
+  overflow: visible;
+}
+/* 공통 한지 페이지 면 — 앞면/뒷면/아래장 */
+.leaf-front,
+.leaf-back,
+.rx-page2 {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 11px 10px 14px;
+  background: #f3e6c4;            /* 책 한지색 — 불투명 */
+  backface-visibility: hidden;
+}
+/* 좌측과 같은 한지 결 텍스처 */
+.leaf-front::before,
+.leaf-back::before,
+.rx-page2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("../asset/main/background.png") center / cover no-repeat;
+  opacity: 0.2;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 0;
+}
+.leaf-front > *,
+.leaf-back > *,
+.rx-page2 > * { position: relative; z-index: 1; }
+
+/* 2페이지 우측(아래장) — 넘어가는 책장 아래에 깔려 있다가 드러남 */
+.rx-page2 {
+  z-index: 1;
+}
+/* 넘어가는 처방 책장(앞면=처방, 뒷면=좌측 약재) */
+.rx-leaf {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  transform-style: preserve-3d;
+  transform-origin: left center; /* 책등(골) */
+  transform: rotateY(0deg);
+  transition: transform 0.62s cubic-bezier(0.42, 0.04, 0.22, 1);
+}
+.rx-leaf .leaf-back {
+  /* 뒷면 — 넘어가면 좌측(증상) 페이지 위에 안착해 약재 표시 */
+  transform: rotateY(180deg);
+}
+/* 책등을 축으로 완전히 넘어간 상태(2페이지) */
+.rx-leaf.flip-away {
+  transform: rotateY(-180deg);
+}
+/* 처방명을 좌측 증상명과 같은 높이에 맞춤 */
+.leaf-front .rx-formula-name { margin-top: 2px; }
+/* 처방명과 진행바 사이 여백 — 진행바를 조금 더 아래로 */
+.leaf-front .rx-progress-wrap { margin-top: 24px; }
+/* 양쪽 CTA(약재 자세히보기 / 증상·처방 보기)를 같은 높이(하단)에 고정 */
+.leaf-front .rx-leaf-foot,
+.rx-page2 .rx-leaf-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+}
+.rx-flip-arrow.rx-flip-cta {
+  width: auto;
+  height: auto;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.rx-flip-cta .rx-cta-arrow {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+/* 약재 장: 슬롯 + 하단 네비 */
+.rx-herb-slots {
+  display: flex;
+  flex-direction: row-reverse; /* 우→좌 읽기 (고서 방식) */
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 40px; /* 좁은 책에서도 약재가 보이도록 최소 높이 확보 */
+  /* 약재 수(--slot-count)에 맞춰 글자 크기를 계산하기 위한 컨테이너 기준 */
+  container-type: inline-size;
+  /* 하단 여백을 좌·우 동일하게 둬 화살표 자리만큼 칸 높이를 맞춤 */
+  padding: 4px 0 18px;
+}
+.rx-leaf-foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 4px;
+}
+.rx-leaf-ind {
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  color: #6a5a4a;
+  font-family: var(--font-sans);
+  min-width: 2.2em;
+  text-align: center;
+}
+/* 책장 넘김 화살표 — 화살표 글리프만 */
+.rx-flip-arrow {
+  border: none;
+  background: transparent;
+  color: #5b3a18;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 1.2rem;
+  line-height: 1;
+  font-weight: 700;
+  /* 패널(.herb-game-rx-panel)이 pointer-events:none 이므로 화살표만 클릭 허용 */
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.15s, opacity 0.2s;
+}
+.rx-flip-arrow:hover:not(:disabled) { color: #2a1808; }
+.rx-flip-arrow:disabled { opacity: 0.25; cursor: default; }
+.rx-herb-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 2px 4px;
+  /* 페이지 폭에 맞춰 칸이 줄어듦 — 약재 수가 많아도 잘리지 않음 */
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 34px;
+  background: transparent;
+  /* 계선(界線): 칸 경계에 직접 묵선 — 칸 폭과 항상 정렬 */
+  border: none;
+  border-left: 1px solid rgba(60, 35, 10, 0.18);
+  border-radius: 0;
+  transition: opacity 0.3s;
+}
+/* 좌측 끝 칸(고서 읽기 마지막 칸)은 바깥 계선 제거 */
+.rx-herb-slot:last-child { border-left: none; }
+.rx-herb-slot.collected { opacity: 1; }
+.rx-herb-slot.collected .rx-slot-img,
+.rx-herb-slot.collected .rx-slot-name,
+.rx-herb-slot.collected .rx-slot-dose {
+  opacity: 0.25;
+}
+.rx-herb-slot.collected .rx-slot-name {
+  text-decoration: line-through;
+  text-decoration-color: rgba(91, 58, 24, 0.7);
+  /* 세로쓰기에서는 자동으로 세로 줄긋기 적용됨 */
+}
+.rx-slot-img { display: none; }
+.rx-slot-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.rx-slot-img span {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #9a7030;
+}
+.rx-slot-info {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 100%;
+}
+.rx-slot-name {
+  /* 세로쓰기 — 약재명 */
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: var(--font-sans);
+  /* 약재 수가 많으면 칸 폭(컨테이너 폭 ÷ 칸 수)에 맞춰 자동 축소 */
+  font-size: min(0.64rem, calc(100cqw / var(--slot-count, 6) - 5px));
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #2a1808;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 100%;
+}
+.rx-slot-dose {
+  font-size: 0.52rem;
+  font-weight: 600;
+  color: #8a7560;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  align-self: flex-start;
+}
+.rx-slot-check {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(91, 58, 24, 0.18);
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: color 0.3s, transform 0.3s, opacity 0.3s;
+}
+.rx-herb-slot.collected .rx-slot-check {
+  color: #8a1f15;
+  opacity: 1;
+  transform: scale(1.35);
+}
+
+/* ══════════════════════════════════════
+   코치마크 오버레이 (최초 진입)
+   ══════════════════════════════════════ */
+.herb-game-coach {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  background: rgba(8, 6, 3, 0.82);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: coachFadeIn 0.4s ease;
+}
+.herb-game-coach[aria-hidden="true"] {
+  display: none;
+}
+@keyframes coachFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.coach-inner {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 5%;
+  width: 100%;
+  max-width: none;
+  position: relative;
+}
+.coach-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.coach-step--right {
+  position: absolute;
+  right: 6%;
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: 240px;
+}
+.coach-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.coach-step--left,
+.coach-step--right {
+  flex-shrink: 0;
+}
+@keyframes arrowBounceLeft {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(-8px); }
+}
+@keyframes arrowBounceRight {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(8px); }
+}
+.coach-step--left .coach-arrow {
+  animation: arrowBounceLeft 0.9s ease-in-out infinite;
+}
+.coach-step--right .coach-arrow {
+  animation: arrowBounceRight 0.9s ease-in-out infinite;
+}
+.coach-arrow {
+  font-size: 1.8rem;
+  color: rgba(200, 160, 80, 0.6);
+  font-weight: 700;
+  line-height: 1;
+}
+.coach-bubble {
+  background: transparent;
+  border: none;
+  border-radius: 14px;
+  padding: 16px 14px;
+  text-align: center;
+  box-shadow: none;
+}
+.coach-bubble-center {
+  border: none;
+  box-shadow: none;
+}
+.coach-title {
+  font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  font-size: 1.5625rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 6px;
+  letter-spacing: 0.02em;
+}
+/* 처방 정보 제목 — 글꼴·크기를 메인 제목과 통일 */
+.coach-step--right .coach-title {
+  font-size: 1.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.coach-body {
+  font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  font-size: 0.975rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  line-height: 1.6;
+}
+.coach-dismiss-btn {
+  background: #fff;
+  color: #000;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  padding: 14px 52px;
+  border-radius: 10px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 240px;
+  text-align: center;
+}
+.coach-dismiss-btn:hover {
+  transform: scale(1.05) translateY(-1px);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
+}
+
+/* 모바일 — 게임 코치마크 폰트 축소 + 처방 정보 영역 제거 */
+@media (max-width: 768px) {
+  .coach-title,
+  .coach-step--right .coach-title { font-size: 1.15rem; margin-bottom: 4px; }
+  .coach-body { font-size: 0.82rem; line-height: 1.5; }
+  .coach-arrow { font-size: 1.3rem; }
+  .coach-dismiss-btn { font-size: 0.95rem; padding: 11px 38px; }
+  .coach-bubble { padding: 10px 12px; }
+  /* 모바일: 우측 '처방 정보' 블록 삭제 → 본문(손동작 안내)에 영역 확보 */
+  .coach-step--right { display: none; }
+  .coach-inner { padding: 40px 6%; }
+  .coach-center { width: 100%; }
+  .coach-center .coach-step { min-width: 0; max-width: 86vw; }
+}
+
+/* 코치마크 우측 상단 닫기(X) 버튼 */
+.coach-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, transform 0.15s;
+}
+.coach-close-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+/* ── 코치마크: 웹캠 손동작 힌트 ── */
+.coach-hand-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.coach-hand-svg {
+  width: 112px;
+  height: 140px;
+  object-fit: contain;
+  /* 원본 갈색 → 흰색 + 은은한 글로우 */
+  filter: brightness(0) invert(1)
+          drop-shadow(0 0 14px rgba(255, 255, 255, 0.5));
+  transform-origin: 50% 90%;
+  animation: coachHandFloat 2.6s ease-in-out infinite;
+}
+@keyframes coachHandFloat {
+  0%   { transform: translateY(0) rotate(-5deg); }
+  50%  { transform: translateY(-7px) rotate(4deg); }
+  100% { transform: translateY(0) rotate(-5deg); }
+}
+/* 주먹 — 산: 위아래로 빻기 */
+.coach-hand-fist.coach-hand-pound {
+  animation: coachFistPound 0.95s ease-in-out infinite;
+}
+@keyframes coachFistPound {
+  0%, 100% { transform: translateY(-8px); }
+  50%      { transform: translateY(8px); }
+}
+/* 주먹 — 고: 원을 그리며 휘젓기 */
+.coach-hand-fist.coach-hand-circle {
+  animation: coachFistCircle 1.7s linear infinite;
+}
+@keyframes coachFistCircle {
+  0%   { transform: translate(9px, 0); }
+  25%  { transform: translate(0, 9px); }
+  50%  { transform: translate(-9px, 0); }
+  75%  { transform: translate(0, -9px); }
+  100% { transform: translate(9px, 0); }
+}
+/* 엄지·검지 끝 표시 점 — 인식 중 느낌으로 깜빡 */
+.coach-pinch-dots circle {
+  animation: coachPinchDot 1.6s ease-in-out infinite;
+}
+.coach-pinch-thumb { animation-delay: 0.2s; }
+@keyframes coachPinchDot {
+  0%, 100% { opacity: 0.9; }
+  50%      { opacity: 0.45; }
+}
+.coach-hand-caption {
+  font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  font-size: 0.965rem;
+  font-weight: 600;
+  color: #ffd76a;
+  letter-spacing: 0.12em;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.coach-hand-caption::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #ff4d4d;
+  box-shadow: 0 0 8px #ff4d4d;
+  animation: coachRecBlink 1.2s ease-in-out infinite;
+}
+/* 모바일은 웹캠이 아닌 터치로 진행 → 웹캠 안내 문구 숨김 */
+.herb-game-overlay.mobile-mode .coach-hand-caption { display: none; }
+@keyframes coachRecBlink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.25; }
+}
+
+/* ── 캔버스 & 비디오 ── */
+.herb-game-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+}
+.herb-game-video {
+  position: absolute;
+  top: 0; left: 0;
+  width: 1px; height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── 탕 모드 1인칭 배경 영상 ── */
+.herb-game-bg-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  display: none;
+  pointer-events: none;
+}
+.herb-game-overlay.tang-mode .herb-game-bg-video { display: block; }
+.herb-game-overlay.picker-mode .herb-game-bg-video { display: none; }
+
+/* 탕 모드에서는 기존 이모지 약탕기 숨김 (배경 영상에 약탕기 포함) */
+.herb-game-overlay.tang-mode .herb-game-pot { display: none; }
+
+/* 환 모드 — 캔버스에 직접 프레임을 그리므로 약탕기·웹캠 PIP 숨김 */
+.herb-game-overlay.hwan-mode .herb-game-pot { display: none; }
+
+/* 산 모드 — 캔버스에 직접 프레임을 그리므로 약탕기 숨김 */
+.herb-game-overlay.san-mode .herb-game-pot { display: none; }
+
+
+/* ── 약탕기 ── */
+.herb-game-pot {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 18%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.pot-glow-ring {
+  position: absolute;
+  bottom: 70%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 22px;
+  background: radial-gradient(ellipse, rgba(200, 140, 40, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.herb-game-pot-icon {
+  font-size: 3.6rem;
+  filter: drop-shadow(0 3px 14px rgba(180, 120, 40, 0.6));
+  animation: potBob 2.5s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+.herb-game-pot-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(200, 170, 120, 0.7);
+  margin-top: 2px;
+  letter-spacing: 0.06em;
+}
+@keyframes potBob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+
+/* ── 수집된 약재 태그 ── */
+.herb-game-collected {
+  position: absolute;
+  bottom: 18%;
+  left: 170px;
+  right: 245px;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 6px 12px;
+  pointer-events: none;
+}
+.herb-game-collected-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(20, 15, 6, 0.88);
+  border: 1px solid rgba(200, 160, 80, 0.3);
+  border-radius: 20px;
+  padding: 4px 12px 4px 4px;
+  color: #e8d5b5;
+  font-size: 0.8rem;
+  font-weight: 600;
+  animation: tagPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: blur(4px);
+}
+.herb-game-collected-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(200, 170, 120, 0.3);
+}
+.herb-game-collected-dose {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #c8a860;
+  background: rgba(100, 75, 30, 0.4);
+  border-radius: 8px;
+  padding: 1px 6px;
+  margin-left: 2px;
+}
+@keyframes tagPop {
+  0%   { transform: scale(0) translateY(30px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.herb-game-collected-tag.fade-out {
+  animation: tagFadeOut 0.6s ease-out forwards;
+}
+@keyframes tagFadeOut {
+  0%   { opacity: 1; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(0.8) translateY(-16px); }
+}
+
+/* ══════════════════════════════════════
+   완성 화면 — 도장(seal) 연출
+   ══════════════════════════════════════ */
+.herb-game-complete {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 10, 6, 0.0);
+  animation: completeBgIn 1.2s ease forwards;
+}
+.herb-game-complete[aria-hidden="true"] {
+  display: none;
+}
+@keyframes completeBgIn {
+  0%   { background: rgba(12, 10, 6, 0.0); }
+  100% { background: rgba(12, 10, 6, 0.88); backdrop-filter: blur(10px); }
+}
+/* 완성 배경: 동·의·보·감 그라데이션 드로온 — 연하게 깔리는 레이어 */
+.herb-game-complete-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0px, 1vw, 16px);
+  pointer-events: none;
+  opacity: 0;
+  animation: hgcBgFade 1.6s ease 0.5s forwards;
+}
+@keyframes hgcBgFade {
+  0%   { opacity: 0; }
+  100% { opacity: 0.05; }
+}
+.hgc-bg-char {
+  width: clamp(200px, 25vw, 560px);
+  height: clamp(340px, 80vh, 900px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hgc-bg-char svg {
+  width: 100%;
+  height: 100%;
+  /* 그라데이션 컬러 JSON을 흰색 계열로 통일 */
+  filter: brightness(0) invert(1);
+}
+.herb-game-complete-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: completeSlideUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+@keyframes completeSlideUp {
+  0%   { opacity: 0; transform: translateY(60px) scale(0.85); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.herb-game-complete-seal {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.seal-icon {
+  width: 108px;
+  height: 108px;
+  object-fit: contain;
+  z-index: 2;
+  filter: drop-shadow(0 0 20px rgba(255, 200, 80, 0.6));
+  animation: sealStamp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.8s both;
+}
+@keyframes sealStamp {
+  0%   { transform: scale(3) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(0.9) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.seal-ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(200, 160, 80, 0.5);
+  border-radius: 50%;
+  animation: sealRingPulse 2.5s ease-in-out infinite;
+}
+.seal-ring-2 {
+  inset: -12px;
+  border-width: 1.5px;
+  border-color: rgba(200, 160, 80, 0.25);
+  animation-delay: 0.6s;
+}
+@keyframes sealRingPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50%       { transform: scale(1.08); opacity: 0.9; }
+}
+.herb-game-complete-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #e8d5b5;
+  margin: 0 0 8px;
+  letter-spacing: 0.08em;
+  animation: titleGlow 2s ease-in-out infinite alternate;
+}
+@keyframes titleGlow {
+  0%   { text-shadow: 0 2px 20px rgba(200, 160, 60, 0.3); }
+  100% { text-shadow: 0 2px 35px rgba(255, 200, 80, 0.7), 0 0 60px rgba(200, 160, 60, 0.2); }
+}
+.herb-game-complete-formula {
+  font-size: 1.55rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 12px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+.herb-game-complete-sub {
+  font-size: 0.88rem;
+  color: rgba(200, 180, 150, 0.6);
+  margin: 0 0 10px;
+}
+.herb-game-complete-patient-msg {
+  font-size: 0.95rem;
+  color: #fff;
+  opacity: 0.7;
+  font-weight: 400;
+  margin: 0 0 28px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+.herb-game-complete-btn {
+  background: #ffffff;
+  color: #111;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 14px 48px;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+  animation: btnAppear 0.5s ease 1.6s both;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+@keyframes btnAppear {
+  0%   { opacity: 0; transform: translateY(15px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.herb-game-complete-btn:hover {
+  transform: scale(1.04);
+  background: #f6f6f6;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+}
+
+/* ══════════════════════════════════════
+   처방 선택 피커 화면
+   ══════════════════════════════════════ */
+
+/* 게임 활성 시 body-view 배경 콘텐츠 숨기기 */
+body.herb-game-active .view-panel {
+  visibility: hidden;
+}
+
+.herb-game-picker {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse at 15% 40%, rgba(100,70,20,0.2) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 30%, rgba(60,40,10,0.15) 0%, transparent 50%),
+    linear-gradient(160deg, #0e0b06 0%, #1a1208 55%, #0a0804 100%);
+  overflow: hidden;
+  animation: pickerFadeIn 0.35s ease;
+}
+.herb-game-picker[aria-hidden="true"] {
+  display: none;
+}
+@keyframes pickerFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* picker 모드일 때 게임 요소 숨기기 */
+.herb-game-overlay.picker-mode .herb-game-hud { display: none; }
+.herb-game-overlay.picker-mode .herb-game-patient { display: none; }
+.herb-game-overlay.picker-mode .herb-game-rx-panel { display: none; }
+.herb-game-overlay.picker-mode .herb-game-book-fab { display: none !important; }
+.herb-game-overlay.picker-mode .herb-game-canvas { display: none; }
+.herb-game-overlay.picker-mode .herb-game-pot { display: none; }
+.herb-game-overlay.picker-mode .herb-game-collected { display: none; }
+.herb-game-overlay.picker-mode .herb-game-coach { display: none; }
+.herb-game-overlay.picker-mode .herb-game-complete { display: none; }
+
+.picker-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.13);
+  color: rgba(200,180,150,0.7);
+  font-size: 1.4rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.2s, color 0.2s;
+  z-index: 5;
+}
+.picker-close-btn:hover { background: rgba(255,80,80,0.18); color: #ff8a8a; }
+
+/* ── 상단 hero 영역 ── */
+.picker-hero {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 28px 40px 16px;
+  border-bottom: 1px solid rgba(200,160,80,0.12);
+}
+.picker-eyebrow {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(200,160,80,0.55);
+  margin: 0 0 8px;
+}
+.picker-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #f0e2b8;
+  margin: 0 0 8px;
+  line-height: 1.35;
+  text-shadow: 0 0 24px rgba(200,160,60,0.3);
+}
+.picker-subtitle {
+  font-size: 0.8rem;
+  color: rgba(200,175,130,0.6);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── body map + disease panel 레이아웃 ── */
+.picker-body-area {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── 좌측: 신체 지도 ── */
+.picker-map-wrap {
+  flex: 0 0 auto;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 10px 16px 20px;
+  border-right: 1px solid rgba(200,160,80,0.1);
+  overflow-y: auto;
+}
+.picker-map-hint {
+  font-size: 0.7rem;
+  color: rgba(200,160,80,0.55);
+  margin: 0 0 10px;
+  letter-spacing: 0.06em;
+}
+.picker-figures {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+.picker-figure {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  display: block;
+}
+.picker-head-figure {
+  width: 120px;
+}
+.picker-body-figure {
+  width: 144px;
+}
+.picker-map-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: brightness(0.85) sepia(0.15);
+}
+.picker-hotspot-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.picker-hotspot {
+  cursor: pointer;
+  transition: fill 0.18s;
+  stroke: none;
+}
+.picker-hotspot:hover {
+  fill: rgba(200,160,80,0.25) !important;
+  stroke: rgba(200,160,80,0.6);
+  stroke-width: 1.5px;
+}
+.picker-hotspot.active {
+  fill: rgba(200,160,80,0.3) !important;
+  stroke: rgba(200,160,80,0.8);
+  stroke-width: 2px;
+}
+
+/* ── 우측: 증상 목록 ── */
+.picker-disease-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+/* ── 제형 필터 탭 ── */
+.picker-type-filters {
+  position: relative; /* preview anchor */
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid rgba(200,160,80,0.1);
+  flex-wrap: wrap;
+}
+.picker-type-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-weight: 700;
+  color: rgba(200,170,120,0.65);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(200,160,80,0.15);
+  border-radius: 14px;
+  padding: 6px 14px 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+.picker-type-btn .picker-type-name {
+  font-size: 0.78rem;
+}
+.picker-type-btn .picker-type-mini {
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: rgba(200,170,120,0.5);
+  letter-spacing: 0.01em;
+}
+.picker-type-btn:hover {
+  background: rgba(200,160,80,0.12);
+  color: #e0c880;
+}
+.picker-type-btn:hover .picker-type-mini {
+  color: rgba(240, 210, 150, 0.85);
+}
+.picker-type-btn.active {
+  background: rgba(200,160,80,0.2);
+  border-color: rgba(200,160,80,0.5);
+  color: #f0e2b8;
+  box-shadow: 0 0 8px rgba(200,160,60,0.2);
+}
+.picker-type-btn.active .picker-type-mini {
+  color: rgba(240, 220, 170, 0.9);
+}
+
+/* 호버 프리뷰 팝업 — 버튼 위에 떠 있는 이미지 카드 */
+.picker-type-preview {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  transform: translate(-50%, 0) scale(0.96);
+  transform-origin: 50% 100%;
+  z-index: 30;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 10px;
+  background: rgba(28, 22, 14, 0.96);
+  border: 1px solid rgba(200, 160, 80, 0.45);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.picker-type-preview[aria-hidden="false"] {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+.picker-type-preview img {
+  width: 168px;
+  height: 168px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.3);
+}
+.picker-type-preview-cap {
+  max-width: 168px;
+  font-size: 0.72rem;
+  color: #e8d5a8;
+  text-align: center;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+/* 화살표 (말풍선 꼬리) */
+.picker-type-preview::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: rgba(28, 22, 14, 0.96);
+  filter: drop-shadow(0 1px 0 rgba(200, 160, 80, 0.4));
+}
+/* 모바일/터치(호버 없음)에선 프리뷰 숨김 */
+.herb-game-overlay.mobile-mode .picker-type-preview {
+  display: none;
+}
+@media (hover: none) {
+  .picker-type-preview { display: none; }
+}
+
+/* 제형 선택 시 짧은 설명 — 필터 행 바로 아래 */
+.picker-type-desc {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 8px 16px 10px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: rgba(220, 200, 160, 0.78);
+  border-bottom: 1px solid rgba(200,160,80,0.08);
+  letter-spacing: 0.01em;
+}
+.picker-disease-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid rgba(200,160,80,0.1);
+}
+.picker-filter-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #e0c880;
+  letter-spacing: 0.06em;
+}
+.picker-reset-btn {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(200,160,80,0.6);
+  background: rgba(200,160,80,0.08);
+  border: 1px solid rgba(200,160,80,0.2);
+  border-radius: 10px;
+  padding: 2px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.picker-reset-btn[aria-hidden="true"] { display: none; }
+.picker-reset-btn:hover { background: rgba(200,160,80,0.18); }
+
+.picker-disease-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  align-content: start;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200,160,80,0.25) transparent;
+}
+.picker-disease-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(200,160,80,0.14);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s, transform 0.12s;
+  animation: pickerCardIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes pickerCardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.picker-disease-card:hover {
+  background: rgba(200,160,80,0.1);
+  border-color: rgba(200,160,80,0.45);
+  transform: translateY(-2px);
+}
+.picker-disease-card:active { transform: scale(0.98); }
+.picker-card-type {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #c8a860;
+  background: rgba(180,140,40,0.18);
+  border: 1px solid rgba(180,140,40,0.3);
+  border-radius: 4px;
+  padding: 1px 6px;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+.picker-disease-card[data-type="tang"] .picker-card-type { color: #80c8e0; background: rgba(80,160,200,0.15); border-color: rgba(80,160,200,0.3); }
+.picker-disease-card[data-type="hwan"] .picker-card-type { color: #e0a060; background: rgba(200,140,60,0.15); border-color: rgba(200,140,60,0.3); }
+.picker-disease-card[data-type="san"] .picker-card-type { color: #a0d080; background: rgba(120,180,80,0.15); border-color: rgba(120,180,80,0.3); }
+.picker-disease-card[data-type="go"] .picker-card-type { color: #d0a0d0; background: rgba(180,120,180,0.15); border-color: rgba(180,120,180,0.3); }
+.picker-disease-card[data-type="dan"] .picker-card-type { color: #e08080; background: rgba(200,80,80,0.15); border-color: rgba(200,80,80,0.3); }
+.picker-card-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f0e2b8;
+  line-height: 1.3;
+}
+.picker-card-hanja {
+  font-size: 0.66rem;
+  color: rgba(200,170,120,0.5);
+  margin-bottom: 3px;
+}
+.picker-card-formula {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #c8a860;
+  background: rgba(180,140,40,0.14);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.picker-card-desc {
+  font-size: 0.68rem;
+  color: rgba(190,165,115,0.65);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+.picker-card-count {
+  font-size: 0.62rem;
+  color: rgba(160,140,100,0.45);
+  margin-top: 2px;
+}
+
+/* ── 처방 영역 게임 시작 버튼 ── */
+.body-herb-game-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #5a3e1b, #7a5a2e);
+  color: #f0e6d2;
+  border: 1px solid rgba(180, 150, 100, 0.3);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.body-herb-game-btn:hover {
+  background: linear-gradient(135deg, #7a5a2e, #9a7a3e);
+  transform: translateY(-1px);
+}
+.body-herb-game-btn .game-btn-icon {
+  font-size: 1.1rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .herb-game-hud { height: 50px; padding: 0 12px; }
+  .herb-game-formula { font-size: 0.88rem; max-width: 140px; }
+  /* 피커: 모바일에서 세로 스택 */
+  .picker-body-area { flex-direction: column; }
+  .picker-map-wrap { width: 100%; border-right: none; border-bottom: 1px solid rgba(200,160,80,0.1); flex-direction: row; justify-content: center; padding: 10px; }
+  .picker-figures { flex-direction: row; align-items: flex-end; gap: 4px; }
+  .picker-head-figure { width: 70px; }
+  .picker-body-figure { width: 84px; }
+  .picker-hero { padding: 20px 16px 12px; }
+  .picker-title { font-size: 1.1rem; }
+  .herb-game-complete-title { font-size: 1.8rem; }
+  .herb-game-complete-seal { width: 100px; height: 100px; }
+  .seal-icon { width: 84px; height: 84px; }
+  .herb-game-rx-panel { width: 92vw; right: 4vw; top: 56px; aspect-ratio: 1.4 / 1; }
+  .patient-figure-container { width: 100%; }
+  .patient-disease-name { font-size: 0.8rem; }
+  .herb-game-collected { left: 12px; right: 12px; }
+  .coach-step { min-width: 0; max-width: 86vw; }
+  .coach-inner { padding: 32px 5%; gap: 8px; }
+  .coach-step--right { display: none; }
+}
+
+/* 처방탭 — 좁은 화면에서는 세로 배치 */
+@media (max-width: 680px) {
+  .presc-main-layout {
+    flex-direction: column;
+  }
+  .presc-body-filter {
+    width: 100%;
+    position: static;
+  }
+  .presc-body-figures {
+    flex-direction: row;
+    justify-content: center;
+  }
+  .presc-head-figure { width: 110px; }
+  .presc-full-figure { width: 160px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   약재 부위별 활용 섹션
+   ══════════════════════════════════════════════════════════════════ */
+.herb-parts-section {
+  margin: 3.5rem 0 2rem;
+}
+
+.herb-parts-dashboard {
+  min-height: 200px;
+}
+
+.herb-parts-body {
+  min-height: 120px;
+}
+
+/* ── 연(蓮) 부위별 3D 뷰어 ──────────────────────────────── */
+.lotus-intro {
+  margin: 0 0 1.25rem;
+  font-size: var(--text-md);
+  line-height: var(--lh-body);
+  color: var(--ink-3);
+  letter-spacing: var(--ls-normal);
+}
+
+.lotus-stage {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 1.5rem;
+  background: none;
+  border: none;
+  overflow: visible;
+}
+
+.lotus-canvas-wrap {
+  position: relative;
+  flex: 1 1 50%;
+  min-height: 460px;
+  cursor: grab;
+}
+.lotus-canvas-wrap:active { cursor: grabbing; }
+.lotus-canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+
+.lotus-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  color: var(--ink-5);
+  pointer-events: none;
+}
+.lotus-loading.hidden { display: none; }
+
+/* 설명 카드 영역 */
+.lotus-info {
+  flex: 0 0 46%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.5rem 1.5rem 1.5rem 0;
+}
+.lotus-info-hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-6);
+  letter-spacing: var(--ls-normal);
+}
+
+/* 부위 상세 보조 뷰어 — 상세 3D + 위·아래 두 갈래 설명 박스 */
+.lotus-detail {
+  position: relative;
+  display: block;
+  /* 정보열(우측) 밖 왼쪽까지 확장 (분할쌍 상세에서만 보임) */
+  width: 150%;
+  margin-left: -52%;
+  height: clamp(320px, 50vh, 540px);
+}
+.lotus-detail[hidden] { display: none; }
+/* 3D 스테이지: 넓게·왼쪽으로 밀어 설명(우측) 공간 확보. 단 모델이 화면 중앙
+   가까이 오도록 과하게 왼쪽으로 빼지 않는다(연화·연수 등 다른 부위와 무게 균형). */
+.lotus-detail-stage {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -13%;
+  width: 82%;
+  z-index: 0;
+}
+/* 두 약재 설명: 스테이지 폭에 밀리지 않게 위에 띄워 오른쪽에 배치 */
+.lotus-detail-callouts {
+  position: absolute;
+  z-index: 2;
+  right: 3%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(2rem, 7vh, 4rem);
+}
+.lotus-detail-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+}
+.lotus-detail-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  color: var(--ink-5);
+  pointer-events: none;
+}
+.lotus-detail-loading.hidden { display: none; }
+
+/* 갈래 끝 설명 박스 — 연화 카드처럼 컬러 이미지 + 이름 + 학문명 + 내용 */
+.lotus-detail-callout {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.1rem 0;
+}
+.lotus-detail-callout[hidden] { display: none; }
+.lotus-detail-callout-img {
+  flex: 0 0 auto;
+  width: clamp(48px, 6vw, 68px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 9px rgba(0, 0, 0, 0.12));
+}
+.lotus-detail-callout-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.lotus-detail-callout-name {
+  margin: 0 0 0.12rem;
+  font-size: var(--text-lg);     /* 카드와 통일 (xl·md 의 중간) */
+  font-weight: 700;
+  color: var(--clay-deep);
+  letter-spacing: var(--ls-snug);
+}
+.lotus-detail-callout-sub {
+  margin: 0 0 0.3rem;
+  font-size: 0.7rem;             /* 카드와 통일 */
+  color: var(--ink-5);
+  letter-spacing: var(--ls-wide);
+}
+.lotus-detail-callout-eff {
+  margin: 0;
+  font-size: var(--text-sm);     /* 카드와 통일 (md·xs 의 중간) */
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* 모델 앵커 → 설명 박스 점선 (스테이지와 설명 사이 레이어) */
+.lotus-detail-leader {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.lotus-detail-leader.lotus-detail-leader--on { opacity: 1; }
+.lotus-detail-line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+}
+.lotus-detail-dot { fill: #000; stroke: none; }
+
+.lotus-info-card {
+  padding-left: 0;
+}
+.lotus-info-card--in { animation: lotusCardIn 0.32s ease-out; }
+@keyframes lotusCardIn {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.lotus-info-img {
+  display: block;
+  width: clamp(96px, 9vw, 132px);
+  height: auto;
+  margin: 0 0 0.85rem;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.12));
+}
+.lotus-info-img[hidden] { display: none; }
+.lotus-info-name {
+  margin: 0 0 0.15rem;
+  font-size: var(--text-lg);     /* 갈래 설명과 통일 (xl·md 의 중간) */
+  font-weight: 700;
+  color: var(--clay-deep);
+  letter-spacing: var(--ls-snug);
+}
+.lotus-info-sub {
+  margin: 0 0 0.6rem;
+  font-size: 0.7rem;             /* 갈래 설명과 통일 */
+  color: var(--ink-5);
+  letter-spacing: var(--ls-wide);
+}
+.lotus-info-desc {
+  margin: 0;
+  font-size: var(--text-sm);     /* 갈래 설명과 통일 (md·xs 의 중간) */
+  line-height: var(--lh-body);
+  color: var(--ink-3);
+  max-width: 23rem;              /* 한 줄이 너무 길어지지 않게 */
+}
+.lotus-info-img,
+.lotus-info-name,
+.lotus-info-sub { max-width: 23rem; }
+
+/* 리더 라인 (부위 → 카드) */
+.lotus-leader {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  /* 상세 3D(연근·하엽·연자) 모델이 가로로 넓어 점선 끝을 덮으므로,
+     메인 리더선을 상세 패널(스테이지·갈래선·콜아웃)보다 위에 그린다 */
+  z-index: 6;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.lotus-leader.lotus-leader--on { opacity: 1; }
+.lotus-leader-line {
+  stroke: #000;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.lotus-leader-dot {
+  fill: #000;
+  stroke: none;
+}
+
+/* ── 부위 일러스트 레일 (동의보감 연 부위 한눈에 보기) ──── */
+.lotus-rail {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(0.3rem, 1vw, 0.7rem);
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line-soft, rgba(0, 0, 0, 0.08));
+}
+.lotus-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  width: clamp(50px, 6.6vw, 74px);
+  padding: 0.3rem 0.15rem 0.4rem;
+  background: none;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  opacity: 0.5;
+  filter: grayscale(0.55);
+  transition: opacity 0.25s ease, filter 0.25s ease, transform 0.25s ease, background 0.25s ease;
+}
+.lotus-rail-item:hover { opacity: 0.85; filter: grayscale(0.2); }
+.lotus-rail-item[aria-selected="true"] {
+  opacity: 1;
+  filter: none;
+  transform: translateY(-2px);
+  background: var(--celadon-soft, rgba(122, 161, 130, 0.12));
+}
+/* 분할쌍(연자육·연자심 등)은 서로 바짝 붙여 한 묶음처럼 보이게 */
+.lotus-rail-item--pair-end { margin-left: calc(clamp(0.3rem, 1vw, 0.7rem) * -1 + 0.16rem); }
+.lotus-rail-item--pair-start[aria-selected="true"] {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+.lotus-rail-item--pair-end[aria-selected="true"] {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+.lotus-rail-fig {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(40px, 5vw, 56px);
+  height: clamp(40px, 5vw, 56px);
+}
+.lotus-rail-fig img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.12));
+}
+.lotus-rail-fig--glyph {
+  font-size: clamp(1.1rem, 2.4vw, 1.55rem);
+  font-weight: 700;
+  color: var(--celadon, #7aa182);
+  border: 1.5px solid var(--celadon, #7aa182);
+  border-radius: 50%;
+}
+.lotus-rail-cap {
+  font-size: var(--text-xs);
+  color: var(--ink-4);
+  letter-spacing: var(--ls-snug);
+  white-space: nowrap;
+}
+.lotus-rail-item[aria-selected="true"] .lotus-rail-cap {
+  color: var(--clay-deep);
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .lotus-stage { flex-direction: column; gap: 0; }
+  .lotus-canvas-wrap { min-height: 360px; flex-basis: auto; }
+  .lotus-info { flex-basis: auto; padding: 1.25rem 1.5rem; }
+  .lotus-leader { display: none; }   /* 세로 배치에선 리더선 숨김 */
+  .lotus-rail-item { width: clamp(52px, 17vw, 72px); }
+}
+
+/* ══════════════════════════════════════
+   코치마크 (안내 말풍선)
+   ══════════════════════════════════════ */
+.coachmark {
+  position: absolute;
+  background: #111;
+  color: #fff;
+  padding: 11px 40px 11px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  z-index: 55;
+  animation: coachmarkFadeIn 0.35s ease-out;
+}
+.coachmark[aria-hidden="true"] {
+  display: none;
+}
+.coachmark-text {
+  margin: 0;
+}
+.coachmark-close {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s, background-color 0.15s;
+}
+.coachmark-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+@keyframes coachmarkFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* 화살표 (위/아래) */
+.coachmark-arrow-up::before,
+.coachmark-arrow-down::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+}
+.coachmark-arrow-up::before {
+  top: -7px;
+  border-bottom: 7px solid #111;
+}
+.coachmark-arrow-down::after {
+  bottom: -7px;
+  border-top: 7px solid #111;
+}
+
+/* 약재 탭 — 필터 행 아래 중앙, 화살표 위 */
+.coachmark--filter {
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 효능 탭 — 3D 영역 상단 중앙 */
+.coachmark--efficacy {
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+/* `.efficacy-universe-wrap > *` 규칙(z-index:1, position:relative)을 덮어쓰기 */
+.efficacy-universe-wrap > .coachmark--efficacy {
+  position: absolute;
+  z-index: 55;
+}
+
+/* 처방 탭 — 우측 컬럼 처방법 버튼 바 위 (처방법 탭을 가리지 않도록 위로 올림) */
+.coachmark--presc-controls {
+  top: -116px;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 처방 탭 — 우측 컬럼 처방 그리드 중앙, 삼각형 없음 */
+.coachmark--presc-rx {
+  top: 55%;
+  left: calc(320px + (100% - 320px) / 2);
+  transform: translate(-50%, -50%);
+}
+.coachmark--presc-rx.coachmark-arrow-down::after {
+  display: none;
+}
+
+/* 코치마크가 포함된 컨테이너에 절대좌표 기준 부여 */
+.presc-split-layout {
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .coachmark {
+    white-space: normal;
+    max-width: calc(100vw - 32px);
+    /* 모바일: 말풍선이 sticky 필터/제형 탭(z-index:40)을 가리지 않도록 아래로 */
+    z-index: 30;
+    /* 코치마크 폰트 축소 */
+    font-size: 0.78rem;
+    padding: 9px 34px 9px 13px;
+  }
+  .coachmark-close { font-size: 1.05rem; }
+  .coachmark--filter {
+    left: 16px;
+    right: 16px;
+    transform: none;
+  }
+  .coachmark--filter.coachmark-arrow-up::before {
+    left: 28px;
+    transform: none;
+  }
+  /* 효능 탭 — 모바일에서는 3D 영역 정중앙에 표시 */
+  .coachmark--efficacy {
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+@media (max-width: 700px) {
+  /* 모바일 처방 탭: 좌(280px, 칩이 상단) → 우(제형 행이 상단) 세로 스택 */
+  /* 코치마크는 타깃 아래에 표시 → 화살표 방향을 위로 뒤집음 */
+  .coachmark--presc-controls.coachmark-arrow-down::after {
+    top: -7px;
+    bottom: auto;
+    border-top: none;
+    border-bottom: 7px solid #111;
+  }
+  /* 우측 컬럼 — 제형 타입 바 위 (좌 280px 아래 − 살짝 위) */
+  .coachmark--presc-controls {
+    top: 252px;
+    bottom: auto;
+    left: 50%;
+  }
+  /* 우측 컬럼 — 처방 그리드 중앙 */
+  .coachmark--presc-rx {
+    top: 58%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* ══════════════════════════════════════
+   처방 게임 — 모바일 터치 모드
+   - 웹캠 비디오 숨김
+   - 좌/우 패널을 상단 컴팩트 바로 압축
+   - 단 모드 풀무 버튼 노출
+   ══════════════════════════════════════ */
+.herb-game-overlay.mobile-mode .herb-game-video {
+  display: none !important;
+}
+
+/* 모바일 — 책(증상·처방)을 우측 하단 플로팅 버튼으로 접고, 탭하면 펼침 */
+.herb-game-book-fab { display: none; }
+.herb-game-overlay.mobile-mode .herb-game-book-fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  right: 14px;
+  bottom: 16px;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 1px solid rgba(255, 215, 106, 0.55);
+  border-radius: 50%;
+  background: rgba(30, 18, 6, 0.92);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  z-index: 41;
+  -webkit-tap-highlight-color: transparent;
+  transition: width 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
+              height 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
+              transform 0.15s ease,
+              box-shadow 0.15s ease;
+}
+.herb-game-overlay.mobile-mode .herb-game-book-fab:active {
+  transform: scale(0.92);
+}
+/* 펼침(닫기) 상태 — 버튼 사이즈 축소 + 부드러운 전환 */
+.herb-game-overlay.mobile-mode.book-expanded .herb-game-book-fab {
+  width: 44px;
+  height: 44px;
+}
+.herb-game-overlay.mobile-mode .herb-game-book-fab .book-fab-img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
+}
+/* 펼침 상태 — 닫기(X)로 전환 */
+.herb-game-overlay.mobile-mode.book-expanded .herb-game-book-fab .book-fab-img {
+  display: none;
+}
+.herb-game-overlay.mobile-mode.book-expanded .herb-game-book-fab::after {
+  content: '✕';
+  color: #ffe9a8;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+/* 책 패널 — 기본 숨김, 펼침 시에만 표시 */
+.herb-game-overlay.mobile-mode .herb-game-rx-panel {
+  position: fixed;
+  top: auto;
+  bottom: 74px;
+  right: 12px;
+  left: 12px;
+  width: auto;
+  max-width: 320px;
+  margin: 0 auto;
+  max-height: 48vh;
+  aspect-ratio: 1.4 / 1;
+  z-index: 40;
+  display: none;
+  pointer-events: auto;
+  animation: rxPanelMobileIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.herb-game-overlay.mobile-mode.book-expanded .herb-game-rx-panel {
+  display: block;
+}
+@keyframes rxPanelMobileIn {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.herb-game-overlay.mobile-mode .rx-herb-slots {
+  max-height: 28vh;
+  overflow-y: auto;
+  font-size: 0.74rem;
+}
+
+/* 캔버스는 풀스크린 유지 — 상단 패널은 반투명 오버레이로 자연스럽게 겹침 */
+
+/* 수집 태그 — 패널 아래 영역으로 이동 */
+.herb-game-overlay.mobile-mode .herb-game-collected {
+  left: 8px;
+  right: 8px;
+  top: auto;
+  bottom: 22%;
+  z-index: 7;
+}
+
+/* 약탕기 라벨 — 모바일에서 단순화 */
+.herb-game-overlay.mobile-mode .herb-game-pot {
+  font-size: 0.8rem;
+}
+
+/* 단 모드 풀무 버튼 ──────────────────────── */
+.dan-bellows-controls {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 14px;
+  display: flex;
+  gap: 12px;
+  z-index: 12;
+  pointer-events: none;
+}
+.dan-bellows-btn {
+  flex: 1;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 78px;
+  padding: 10px 8px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(220, 80, 40, 0.92) 0%, rgba(140, 30, 10, 0.95) 100%);
+  color: #fff5e0;
+  font-family: "Pretendard", sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 200, 140, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.dan-bellows-btn .dan-bellows-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+.dan-bellows-btn .dan-bellows-label {
+  text-align: center;
+  line-height: 1.15;
+  font-size: 0.78rem;
+}
+.dan-bellows-btn.active,
+.dan-bellows-btn:active {
+  transform: translateY(2px) scale(0.97);
+  filter: brightness(1.25);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 220, 160, 0.55);
+}
+
+/* 단 모드일 때 모바일 수집 영역을 풀무 버튼 위로 더 올림 */
+.herb-game-overlay.mobile-mode.dan-mode .herb-game-collected {
+  bottom: 110px;
+}

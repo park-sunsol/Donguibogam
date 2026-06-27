@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node /tmp/match_species.js)",
+      "Bash(node /tmp/match_species2.js)",
+      "Bash(node -e ':*)",
+      "Bash(node -e ' *)",
+      "Bash(node -c /Users/hanacardux/Desktop/Donguibogam/script.js)",
+      "WebFetch(domain:pdfcoffee.com)",
+      "WebFetch(domain:www.loc.gov)",
+      "WebFetch(domain:www.heojun.seoul.kr)",
+      "WebFetch(domain:ctext.org)",
+      "WebFetch(domain:zhongyibaodian.com)",
+      "WebFetch(domain:zh.wikisource.org)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "mcp__blender__execute_blender_code",
+      "Read(//Users/hanacardux/Desktop/DonguiBogam/**)"
+    ]
+  }
+}

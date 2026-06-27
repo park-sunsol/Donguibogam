@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>환(丸) — 굴리기 프로토타입</title>
+<style>
+  :root {
+    --paper: #f1e7d0;
+    --ink:   #2a1b0a;
+    --gold:  #c89542;
+    --accent:#8a1f15;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    color: var(--ink); background: #0a0604; overflow: hidden; user-select: none;
+  }
+  .scene { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+  /* ─── 백그라운드 비디오 (작업대 + 반죽 + 트레이) ─── */
+  #bg-video {
+    position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px;
+    opacity: 0; pointer-events: none;
+  }
+  #bg-canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0;
+    background: #1a0e04;
+  }
+  /* 작업대 앞쪽 비네트 */
+  .vignette {
+    position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.35) 100%);
+  }
+
+  /* 트래킹 캔버스 (손 커서) */
+  #fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
+
+  /* 웹캠 PIP */
+  #video {
+    position: absolute; right: 16px; bottom: 16px;
+    width: 160px; height: 90px; object-fit: cover;
+    transform: scaleX(-1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    opacity: 0.5; z-index: 5;
+  }
+
+  /* 한지 처방서 (우상단) */
+  .scroll {
+    position: absolute; top: 28px; right: 200px;
+    width: 280px; padding: 14px 22px;
+    background: var(--paper);
+    background-image: repeating-linear-gradient(180deg, rgba(0,0,0,0.04) 0 1px, transparent 1px 22px);
+    border: 1px solid #b9a572;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.65);
+    text-align: center; z-index: 4;
+  }
+  .scroll-title { margin: 0 0 4px; font-size: 18px; letter-spacing: 6px; color: var(--accent); font-weight: 600; }
+  .scroll-sub { margin: 0; font-size: 12px; color: #6a4a28; letter-spacing: 2px; }
+
+  /* HUD */
+  .hud {
+    position: absolute; top: 16px; left: 16px;
+    background: rgba(0,0,0,0.55); color: var(--paper);
+    padding: 8px 14px; border-radius: 4px; font-size: 12px;
+    letter-spacing: 2px; z-index: 7;
+  }
+  .reset-btn {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(255,255,255,0.12); color: var(--paper); border: 1px solid rgba(255,255,255,0.2);
+    padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;
+    letter-spacing: 2px; z-index: 7;
+  }
+
+  /* 회전 가이드 (반죽 위치 = 화면 좌측 25%, 수직 중앙) */
+  .guide {
+    position: absolute; left: 22%; top: 50%; transform: translate(-50%, -50%);
+    width: 240px; height: 240px; pointer-events: none; z-index: 2;
+    animation: guideSpin 6s linear infinite;
+    opacity: 0.55;
+  }
+  @keyframes guideSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+  .guide svg { width: 100%; height: 100%; }
+  .guide-arc { fill: none; stroke: rgba(255,220,140,0.7); stroke-width: 2.5; stroke-dasharray: 6 6; }
+  .guide-head { fill: rgba(255,220,140,0.9); }
+
+  /* 진행/힌트 (하단) */
+  .progress-wrap {
+    position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%);
+    width: 380px; z-index: 7; pointer-events: none;
+    color: rgba(255,235,200,0.95); text-align: center;
+  }
+  .progress {
+    width: 100%; height: 6px; background: rgba(0,0,0,0.55);
+    border-radius: 3px; overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+  }
+  .progress > div { height: 100%; width: 0%; background: var(--gold); transition: width 0.15s; }
+  .hint {
+    margin-top: 14px; font-size: 13px; letter-spacing: 1px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  }
+
+  /* 결과 모달 */
+  .result {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.75);
+    display: none; align-items: center; justify-content: center; z-index: 10;
+  }
+  .result.show { display: flex; }
+  .result-card {
+    width: 360px; padding: 36px 28px;
+    background: var(--paper); border: 1px solid #b9a572;
+    text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  }
+  .result-title { margin: 0 0 8px; font-size: 22px; color: var(--accent); letter-spacing: 4px; font-weight: 600; }
+  .result-sub { margin: 0 0 24px; font-size: 13px; color: #6a4a28; }
+  .result-stars { font-size: 32px; color: var(--gold); margin-bottom: 16px; letter-spacing: 6px; }
+  .result-btn { padding: 10px 30px; border: none; background: var(--accent); color: #fff;
+                font-size: 14px; letter-spacing: 4px; cursor: pointer; border-radius: 4px; }
+
+  /* 시작 안내 */
+  .splash {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.88);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 20; color: var(--paper); text-align: center; padding: 40px;
+  }
+  .splash h1 { font-size: 28px; letter-spacing: 8px; color: var(--accent); margin: 0 0 12px; }
+  .splash p { max-width: 520px; line-height: 1.7; opacity: 0.85; margin: 4px 0; font-size: 14px; }
+  .splash button {
+    margin-top: 28px; padding: 14px 40px; background: var(--accent); color: #fff;
+    border: none; font-size: 15px; letter-spacing: 6px; cursor: pointer; border-radius: 4px;
+  }
+  .splash.gone { display: none; }
+</style>
+</head>
+<body>
+<div class="scene">
+
+  <video id="bg-video" muted playsinline preload="auto" crossorigin="anonymous">
+    <source src="asset/prescription/whan_background.mp4" type="video/mp4">
+  </video>
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette"></div>
+
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="fx"></canvas>
+
+  <div class="scroll">
+    <p class="scroll-title">六味丸</p>
+    <p class="scroll-sub">육미환 · 환(丸) 4개를 빚으세요</p>
+  </div>
+
+  <div class="hud">진행 <span id="hud">0 / 4</span></div>
+  <button class="reset-btn" id="reset-btn">다시</button>
+
+  <!-- 시계방향 회전 가이드 -->
+  <div class="guide">
+    <svg viewBox="0 0 100 100">
+      <path class="guide-arc" d="M 50 12 A 38 38 0 1 1 49.9 12" />
+      <polygon class="guide-head" points="50,4 56,16 44,16"/>
+    </svg>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress"><div id="progress"></div></div>
+    <p class="hint">반죽 위에서 손을 시계 방향으로 돌리세요</p>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-card">
+      <p class="result-title">六味丸 完成</p>
+      <p class="result-sub">육미환 4환이 완성되었습니다</p>
+      <div class="result-stars" id="result-stars">★ ★ ★</div>
+      <button class="result-btn" id="result-btn">다시 빚기</button>
+    </div>
+  </div>
+
+  <div class="splash" id="splash">
+    <h1>丸</h1>
+    <p>웹캠 앞에서 손을 움직여 환을 직접 빚어보세요.</p>
+    <p>반죽 위에서 손을 시계 방향으로 한 바퀴 돌릴 때마다 환이 한 알씩 빚어집니다. (총 4환)</p>
+    <p id="loading-status" style="margin-top:18px; font-size:12px; opacity:0.6;">프레임 준비 중…</p>
+    <button id="splash-btn" disabled style="opacity:0.4; cursor:not-allowed;">시작</button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js"></script>
+<script>
+(function () {
+  const PILL_COUNT = 4;
+
+  const bg = document.getElementById('bg-video');
+  const bgCanvas = document.getElementById('bg-canvas');
+  const bgCtx = bgCanvas.getContext('2d');
+  const video = document.getElementById('video');
+  const fx = document.getElementById('fx');
+  const fxCtx = fx.getContext('2d');
+  const loadingStatus = document.getElementById('loading-status');
+  const splash = document.getElementById('splash');
+  const splashBtn = document.getElementById('splash-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const result = document.getElementById('result');
+  const stars = document.getElementById('result-stars');
+  const hud = document.getElementById('hud');
+  const progress = document.getElementById('progress');
+  const guide = document.querySelector('.guide');
+
+  /* 프레임 캐시 변수 (선언만 — TDZ 회피) */
+  let frameCache = [];
+  let frameTimes = [];
+  let currentFrameIdx = 0;
+  let framesReady = false;
+
+  function resizeFx() {
+    fx.width = window.innerWidth; fx.height = window.innerHeight;
+    bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
+    drawBgFrame();
+  }
+  window.addEventListener('resize', resizeFx); resizeFx();
+
+  const MAX_FRAMES = 70;
+  const TEAR_PORTION = 0.30;     // 영상 앞 30% = 떼내기 구간
+  const TEAR_DISTANCE = 220;     // 필요한 가로 스와이프 거리(px)
+  const ROLL_REQUIRED = Math.PI; // 반바퀴 = 1환
+
+  let phase = 'tear';            // 'tear' | 'roll'
+  let tearAccum = 0;             // 누적 가로 이동량
+  let rollAccum = 0;             // 이번 사이클 회전(rad)
+
+  let handPos = null;
+  let handLandmarks = null;
+  const HAND_BONES = [
+    [0,1],[1,2],[2,3],[3,4],
+    [0,5],[5,6],[6,7],[7,8],
+    [5,9],[9,10],[10,11],[11,12],
+    [9,13],[13,14],[14,15],[15,16],
+    [13,17],[17,18],[18,19],[19,20],
+    [0,17]
+  ];
+  const JOINT_SIZE = {
+    0: 5,
+    1: 2.5, 2: 2.5, 3: 2.5, 4: 3.5,
+    5: 3.5, 6: 2.5, 7: 2.5, 8: 3.5,
+    9: 3.5, 10: 2.5, 11: 2.5, 12: 3,
+    13: 3.5, 14: 2.5, 15: 2.5, 16: 3,
+    17: 3.5, 18: 2.5, 19: 2.5, 20: 3
+  };
+  let lastAng = null;
+  let lastHandX = null;
+  let pillsMade = 0;
+  let qualityAccum = 0;
+  let bgDuration = 5;     // 비디오 길이 (로드 후 갱신)
+  let frozenFrameTime = 0; // 마지막 환 완성 시점의 영상 시간 (정지 표시용)
+  let cycleStarted = false; // 현재 사이클이 시작됐는지 (영상 진행 중인지)
+
+  /* ── 프레임 캐시 (재생하면서 캡처) — 변수는 상단에서 선언됨 ── */
+
+  async function preloadFrames() {
+    await new Promise(res => {
+      if (bg.readyState >= 2) return res();
+      bg.addEventListener('loadeddata', res, { once: true });
+    });
+    bgDuration = bg.duration || 5;
+
+    const off = document.createElement('canvas');
+    off.width = bg.videoWidth;
+    off.height = bg.videoHeight;
+    const offCtx = off.getContext('2d');
+
+    const captured = [];
+    const useRvfc = typeof bg.requestVideoFrameCallback === 'function';
+
+    function snapshot(time) {
+      offCtx.drawImage(bg, 0, 0);
+      const snap = document.createElement('canvas');
+      snap.width = off.width; snap.height = off.height;
+      snap.getContext('2d').drawImage(off, 0, 0);
+      captured.push({ time, snap });
+      loadingStatus.textContent = `프레임 준비 중… ${captured.length}`;
+    }
+
+    bg.muted = true;
+    bg.playbackRate = 2;        // 빠르게 재생하며 캡처
+    bg.currentTime = 0;
+
+    await new Promise((resolve) => {
+      let finished = false;
+      function finish() { if (finished) return; finished = true; resolve(); }
+      bg.addEventListener('ended', finish, { once: true });
+
+      if (useRvfc) {
+        function onFrame(now, meta) {
+          snapshot(meta.mediaTime);
+          if (!bg.ended && !finished) bg.requestVideoFrameCallback(onFrame);
+        }
+        bg.requestVideoFrameCallback(onFrame);
+      } else {
+        // 폴백: rAF로 ~30fps 캡처
+        function loop() {
+          if (finished) return;
+          snapshot(bg.currentTime);
+          if (!bg.ended) requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+      }
+      bg.play().catch(finish);
+      // 안전망 — 영상 길이의 2배 시간 후 종료
+      setTimeout(finish, (bgDuration / bg.playbackRate) * 1000 + 1500);
+    });
+
+    bg.pause();
+    bg.currentTime = 0;
+    bg.playbackRate = 1;
+
+    captured.sort((a, b) => a.time - b.time);
+
+    /* 70프레임으로 다운샘플 */
+    let downsampled = captured;
+    if (captured.length > MAX_FRAMES) {
+      downsampled = [];
+      for (let i = 0; i < MAX_FRAMES; i++) {
+        const src = Math.round((i / (MAX_FRAMES - 1)) * (captured.length - 1));
+        downsampled.push(captured[src]);
+      }
+    }
+    frameCache = downsampled.map(c => c.snap);
+    frameTimes = downsampled.map(c => c.time);
+
+    framesReady = true;
+    loadingStatus.textContent = `준비 완료 (${frameCache.length} 프레임)`;
+    splashBtn.disabled = false;
+    splashBtn.style.opacity = '1';
+    splashBtn.style.cursor = 'pointer';
+    drawBgFrame();
+  }
+
+  /* 화면 비율에 맞춰 cover 형태로 캐시 프레임을 그림 */
+  function drawBgFrame() {
+    if (!framesReady) {
+      bgCtx.fillStyle = '#1a0e04';
+      bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+      return;
+    }
+    const img = frameCache[currentFrameIdx];
+    if (!img) return;
+    const cw = bgCanvas.width, ch = bgCanvas.height;
+    const iw = img.width, ih = img.height;
+    const scale = Math.max(cw / iw, ch / ih);
+    const dw = iw * scale, dh = ih * scale;
+    const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
+    bgCtx.clearRect(0, 0, cw, ch);
+    bgCtx.drawImage(img, dx, dy, dw, dh);
+  }
+
+  function cycleRatio() {
+    /* 떼내기(0 ~ TEAR_PORTION) + 굴리기(TEAR_PORTION ~ 1) */
+    if (phase === 'tear') {
+      return Math.min(1, tearAccum / TEAR_DISTANCE) * TEAR_PORTION;
+    }
+    const roll = Math.min(1, rollAccum / ROLL_REQUIRED);
+    return TEAR_PORTION + roll * (1 - TEAR_PORTION);
+  }
+
+  function updateProgress() {
+    const cycle = cycleRatio();
+    const pct = Math.min(100, ((pillsMade + cycle) / PILL_COUNT) * 100);
+    progress.style.width = pct + '%';
+    hud.textContent = pillsMade + ' / ' + PILL_COUNT;
+  }
+
+  function updateBgScrub() {
+    if (!framesReady || pillsMade >= PILL_COUNT) return;
+    const n = frameCache.length;
+    if (n === 0) return;
+    const ratio = Math.max(0, Math.min(1, cycleRatio()));
+    const idx = Math.min(n - 1, Math.floor(ratio * (n - 1)));
+    if (idx !== currentFrameIdx) {
+      currentFrameIdx = idx;
+      drawBgFrame();
+    }
+  }
+
+  preloadFrames();
+
+  /* 핀치 판정 — 엄지(4)와 검지(8)의 거리를 손 크기(0→9)로 정규화 */
+  function isPinching() {
+    if (!handLandmarks || handLandmarks.length < 21) return false;
+    const t = handLandmarks[4], i = handLandmarks[8];
+    const w = handLandmarks[0], m = handLandmarks[9];
+    const tipDist = Math.hypot(t.x - i.x, t.y - i.y);
+    const handScale = Math.hypot(w.x - m.x, w.y - m.y) || 1;
+    return (tipDist / handScale) < 0.45;
+  }
+
+  function processHand() {
+    if (!handPos) { lastAng = null; lastHandX = null; return; }
+    if (pillsMade >= PILL_COUNT) return;
+
+    const r = guide.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const dxC = handPos.x - cx, dyC = handPos.y - cy;
+    const dist = Math.hypot(dxC, dyC);
+    const inZone = dist < 280;
+
+    if (phase === 'tear') {
+      /* 떼내기 — 엄지(4) + 검지(8) 핀치 상태에서 오른쪽으로 끄는 동작 */
+      const pinching = isPinching();
+      if (inZone && pinching && lastHandX !== null) {
+        const dx = handPos.x - lastHandX;
+        if (dx > 0) {
+          tearAccum += dx;
+          qualityAccum += dx * 0.005;
+          updateBgScrub();
+        }
+      }
+      lastHandX = handPos.x;
+      lastAng = null;
+      if (tearAccum >= TEAR_DISTANCE) {
+        phase = 'roll';
+        updateHint();
+      }
+    } else {
+      /* 굴리기 — 시계방향 회전 */
+      if (inZone) {
+        const ang = Math.atan2(dyC, dxC);
+        if (lastAng !== null) {
+          let d = ang - lastAng;
+          while (d > Math.PI) d -= Math.PI * 2;
+          while (d < -Math.PI) d += Math.PI * 2;
+          if (d > 0) {
+            rollAccum += d;
+            qualityAccum += d;
+            updateBgScrub();
+          }
+        }
+        lastAng = ang;
+      } else {
+        lastAng = null;
+      }
+      lastHandX = handPos.x;
+
+      if (rollAccum >= ROLL_REQUIRED) {
+        pillsMade++;
+        tearAccum = 0;
+        rollAccum = 0;
+        phase = 'tear';
+        if (pillsMade < PILL_COUNT) {
+          currentFrameIdx = 0;
+          drawBgFrame();
+          updateHint();
+        } else {
+          currentFrameIdx = frameCache.length - 1;
+          drawBgFrame();
+          showResult();
+        }
+      }
+    }
+    updateProgress();
+  }
+
+  const hintEl = document.querySelector('.hint');
+  function updateHint() {
+    if (!hintEl) return;
+    hintEl.innerHTML = phase === 'tear'
+      ? '엄지와 검지를 모아 반죽을 집고, 오른쪽으로 끌어 한 조각을 떼어내세요'
+      : '반죽 위에서 손을 시계 방향으로 돌리세요';
+    guide.style.opacity = phase === 'tear' ? '0.15' : '0.55';
+  }
+  updateHint();
+
+  function drawHandSkeleton() {
+    fxCtx.clearRect(0, 0, fx.width, fx.height);
+    if (!handLandmarks || handLandmarks.length < 21) return;
+    const W = fx.width, H = fx.height;
+    const pts = new Array(21);
+    for (let i = 0; i < 21; i++) {
+      const lm = handLandmarks[i];
+      pts[i] = { x: (1 - lm.x) * W, y: lm.y * H };
+    }
+    const pinch = isPinching();
+    const active = pinch || phase === 'roll';
+    const boneColor = active ? 'rgba(255, 210, 110, 0.95)' : 'rgba(255, 255, 255, 0.78)';
+    const boneGlow  = active ? 'rgba(255, 180, 60, 0.30)'  : 'rgba(200, 230, 255, 0.18)';
+    const jointFill = active ? 'rgba(255, 235, 160, 1)'    : 'rgba(255, 255, 255, 0.95)';
+
+    fxCtx.save();
+    fxCtx.lineCap = 'round';
+    fxCtx.lineJoin = 'round';
+    // 외곽 글로우
+    fxCtx.strokeStyle = boneGlow;
+    fxCtx.lineWidth = 6;
+    for (let b = 0; b < HAND_BONES.length; b++) {
+      const a = pts[HAND_BONES[b][0]], c = pts[HAND_BONES[b][1]];
+      fxCtx.beginPath(); fxCtx.moveTo(a.x, a.y); fxCtx.lineTo(c.x, c.y); fxCtx.stroke();
+    }
+    // 본선
+    fxCtx.strokeStyle = boneColor;
+    fxCtx.lineWidth = 1.8;
+    for (let b = 0; b < HAND_BONES.length; b++) {
+      const a = pts[HAND_BONES[b][0]], c = pts[HAND_BONES[b][1]];
+      fxCtx.beginPath(); fxCtx.moveTo(a.x, a.y); fxCtx.lineTo(c.x, c.y); fxCtx.stroke();
+    }
+    // 관절 점
+    fxCtx.fillStyle = jointFill;
+    for (let j = 0; j < 21; j++) {
+      const s = JOINT_SIZE[j] || 2.5;
+      fxCtx.beginPath(); fxCtx.arc(pts[j].x, pts[j].y, s, 0, Math.PI * 2); fxCtx.fill();
+    }
+    fxCtx.restore();
+  }
+
+  function tick() { processHand(); drawHandSkeleton(); requestAnimationFrame(tick); }
+  tick();
+
+  /* MediaPipe Hands */
+  let started = false;
+  function initHands() {
+    if (started) return; started = true;
+    const hands = new window.Hands({
+      locateFile: f => 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/' + f
+    });
+    hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+    hands.onResults(r => {
+      if (!r.multiHandLandmarks || r.multiHandLandmarks.length === 0) {
+        handPos = null; handLandmarks = null; return;
+      }
+      handLandmarks = r.multiHandLandmarks[0];
+      const p = handLandmarks[9];
+      handPos = { x: (1 - p.x) * window.innerWidth, y: p.y * window.innerHeight };
+    });
+    const cam = new window.Camera(video, {
+      onFrame: async () => { await hands.send({ image: video }); },
+      width: 1280, height: 720,
+    });
+    cam.start();
+  }
+
+  function showResult() {
+    if (result.classList.contains('show')) return;
+    const idealTotal = Math.PI * 2 * PILL_COUNT;
+    const speedRatio = idealTotal / Math.max(idealTotal, qualityAccum);
+    const total = Math.max(1, Math.min(3, Math.round(1 + speedRatio * 2)));
+    stars.textContent = '★ '.repeat(total).trim() + ' ☆'.repeat(3 - total).replace(/☆/g,' ☆');
+    setTimeout(() => result.classList.add('show'), 500);
+  }
+  document.getElementById('result-btn').addEventListener('click', reset);
+  resetBtn.addEventListener('click', reset);
+  function reset() {
+    result.classList.remove('show');
+    lastAng = null; lastHandX = null;
+    tearAccum = 0; rollAccum = 0; phase = 'tear';
+    pillsMade = 0; qualityAccum = 0;
+    currentFrameIdx = 0;
+    drawBgFrame();
+    progress.style.width = '0%';
+    hud.textContent = '0 / ' + PILL_COUNT;
+    updateHint();
+  }
+
+  splashBtn.addEventListener('click', () => {
+    if (splashBtn.disabled) return;
+    splash.classList.add('gone');
+    initHands();
+  });
+})();
+</script>
+</body>
+</html>

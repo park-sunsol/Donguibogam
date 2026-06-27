@@ -1,0 +1,1180 @@
+/* ══════════════════════════════════════
+   처방 브라우저 (처방 탭 전체 리뉴얼)
+   ══════════════════════════════════════ */
+.presc-view {
+  background: transparent;
+  padding: 0;
+  min-height: 100%;
+}
+
+/* 처방 탭 필터 헤더: 기본 숨김, 처방 탭 활성 시에만 표시 */
+.presc-filter-header {
+  display: none;
+}
+body:has(#body-view[aria-hidden="false"]) .presc-filter-header {
+  display: block;
+}
+
+/* 처방 탭이 활성일 때 main 하단 패딩 제거 — 페이지 자체 스크롤 방지 */
+body:has(#body-view[aria-hidden="false"]) main {
+  padding-bottom: 0;
+}
+
+/* 필터 + 그리드 컨테이너 */
+.presc-right-col {
+  height: calc(100vh - var(--sticky-filter-top, 52px) - var(--presc-filter-h, 46px));
+  display: flex;
+  flex-direction: column;
+  padding: 0 24px 40px;
+  overflow-y: auto;
+}
+
+/* ── 전체 폭 필터 헤더 바 (부위 + 처방법) ── */
+.presc-filter-header {
+  --presc-filter-h: 46px;
+  position: sticky;
+  top: var(--sticky-filter-top, 52px);
+  z-index: 40;
+  /* main의 좌우 padding을 뚫고 뷰포트 전체 폭으로 확장 */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  width: 100vw;
+  background: rgba(248, 246, 240, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(206, 206, 206, 0.4);
+}
+/* 내부 컨테이너: main과 동일한 max-width/padding으로 내용 정렬 */
+.presc-filter-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+/* 제형 타입 행 + 제형 비교 버튼 (헤더 바 내부 우측 섹션) */
+.presc-type-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0 10px 16px;
+  border-left: 1px solid rgba(206, 206, 206, 0.4);
+}
+
+/* 제형 타입 카드 행 — 바 내부에서 flex-grow + 가로 스크롤 */
+.presc-type-row {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  transition: padding 0.22s ease, gap 0.22s ease;
+}
+.presc-type-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* 처방법 라벨 — 부위 칩 라벨과 동일 스타일 */
+.presc-type-row-label {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 0 10px 0 2px;
+  margin-right: 4px;
+  border-right: 1px solid #e8e2d8;
+  font-size: calc(var(--text-xs) + 2px);
+  font-weight: 600;
+  color: var(--ink-5);
+  letter-spacing: var(--ls-wide);
+  white-space: nowrap;
+}
+
+/* 제형 카드 — 부위 칩과 동일한 단일 라인 pill 스타일 */
+.presc-type-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  line-height: 1;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--r-pill);
+  border: 1px solid #bbb;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: calc(var(--text-xs) + 2px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-base), color var(--dur-base), border-color var(--dur-base);
+}
+.presc-type-card:hover {
+  background: rgba(245, 245, 245, 0.5);
+  border-color: #999;
+}
+.presc-type-card.active {
+  background: #e8e6e0;
+  color: #000;
+  border-color: #000;
+}
+
+.ptc-icon { display: none; }
+.ptc-name {
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+.ptc-hanja {
+  display: inline-block;
+  margin-left: 2px;
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--ink-6);
+  letter-spacing: 0;
+}
+.presc-type-card:hover .ptc-hanja,
+.presc-type-card.active .ptc-hanja {
+  color: rgba(0, 0, 0, 0.6);
+}
+/* 설명(달인 액체 등)은 칩 형태에서는 숨김 */
+.ptc-desc {
+  display: none;
+}
+
+/* ── 호버 프리뷰 (5제형 이미지) ──
+   position: fixed로 viewport에 띄워 부모의 overflow/stacking 영향에서 분리 */
+.presc-type-preview {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 16px 12px 12px;
+  background: #fff;
+  border: 1px solid #c8c0b4;
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  opacity: 0;
+  transform: translate(-50%, 6px) scale(0.97);
+  transform-origin: 50% 0;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.presc-type-preview[aria-hidden="false"] {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+.presc-type-preview img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e0ddd8;
+  background: rgba(230, 220, 200, 0.4);
+  flex-shrink: 0;
+}
+.presc-type-preview-cap {
+  max-width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+.ptc-preview-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a1208;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+.ptc-preview-desc {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #4a3c22;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ptc-desc-line {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.ptc-bullet {
+  flex-shrink: 0;
+  color: #a09880;
+  line-height: inherit;
+}
+.ptc-bullet-text {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.presc-type-preview::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-bottom-color: #fff;
+  filter: drop-shadow(0 -1px 0 #c8c0b4);
+}
+/* 터치 기기에서는 호버가 없어 의미 없음 → 숨김 */
+@media (hover: none) {
+  .presc-type-preview { display: none; }
+}
+/* 필터 상태 바 */
+.presc-filter-status {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 20px 2px 10px;
+  flex-shrink: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: var(--ink-5);
+}
+.pfs-reset {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+  color: inherit;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+/* 처방 그리드 — 우측 컬럼 내부에서 flex-grow */
+/* 기존 presc-main-layout 대체됨 */
+.presc-main-layout { display: none; } /* 호환성 유지용 숨김 */
+.presc-body-map-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.presc-body-hint {
+  font-size: 0.8rem;
+  color: #8a7a64;
+  text-align: center;
+  margin: 0 0 8px;
+}
+.presc-body-figures {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.presc-body-figure {
+  position: relative;
+  margin: 0;
+  flex-shrink: 0;
+}
+.presc-head-figure {
+  width: 200px;
+}
+.presc-full-figure {
+  width: 290px;
+}
+.presc-body-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+.presc-body-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* 핫스팟 영역 */
+.presc-hotspot {
+  cursor: pointer;
+  transition: fill 0.18s;
+  pointer-events: all;
+}
+.presc-hotspot:hover {
+  fill: rgba(74, 124, 89, 0.25);
+}
+.presc-hotspot.active {
+  fill: rgba(74, 124, 89, 0.42);
+}
+/* 부위 레이블 텍스트 */
+.presc-hotspot-label {
+  font-size: 10px;
+  fill: rgba(60, 45, 20, 0.65);
+  font-weight: 600;
+  pointer-events: none;
+  font-family: inherit;
+  letter-spacing: -0.02em;
+}
+.presc-empty-message {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+/* 처방 그리드 */
+.presc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 10px;
+  align-content: start;
+  flex: 1;
+}
+.presc-grid:has(.presc-empty-message) {
+  align-content: center;
+}
+
+.presc-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 14px 14px 12px;
+  background: rgba(250, 249, 247, 0.5);
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+  animation: prescCardIn 0.3s cubic-bezier(0.22,1,0.36,1) both;
+  position: relative;
+}
+@keyframes prescCardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.presc-card:hover {
+  border-color: #c8b89a;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.09);
+  transform: translateY(-2px);
+}
+
+
+.presc-card-type {
+  font-family: var(--font-sans);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: #a89878;
+  background: rgba(0,0,0,0.05);
+  border-radius: 4px;
+  padding: 1px 7px;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+.ptag-tang .presc-card-type  { color: #2a7aa0; background: rgba(76,168,212,0.1); }
+.ptag-hwan .presc-card-type  { color: #9a5818; background: rgba(212,128,48,0.1); }
+.ptag-san .presc-card-type   { color: #3a7828; background: rgba(96,168,72,0.1); }
+.ptag-go .presc-card-type    { color: #7040a8; background: rgba(160,96,200,0.1); }
+.ptag-dan .presc-card-type   { color: #a02828; background: rgba(200,72,72,0.1); }
+
+.presc-card-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e1610;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.presc-card-formula {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #7a6a54;
+  line-height: 1.35;
+  margin-top: 1px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.presc-card-desc {
+  font-size: 0.85rem;
+  color: #a09080;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* 부위별 보기 (인체 맵) - 3단: 이미지 | 증상 목록 | 처방 */
+.body-map-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(240px, 280px) 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  min-height: 480px;
+}
+@media (max-width: 900px) {
+  .body-map-layout { grid-template-columns: 1fr 1fr; }
+  .body-map-layout .body-dispensing-column { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  .body-map-layout { grid-template-columns: 1fr; }
+}
+.body-map-wrap {
+  position: sticky;
+  top: calc(var(--sticky-filter-top, 52px) + 1rem);
+  background: rgba(250, 249, 247, 0.5);
+  border: 1px solid #e0ddd8;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+  max-height: min(85vh, 720px);
+  overflow-y: auto;
+}
+/* 머리 + 전신 이미지 세로 배치 */
+.body-map-figures {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+/* 인체 이미지 + 부위 오버레이 (동일 비율 240×420) */
+.body-map-figure {
+  position: relative;
+  width: 100%;
+  max-width: 240px;
+  margin: 0 auto;
+  aspect-ratio: 240 / 420;
+  background: linear-gradient(180deg, #e8e6e0 0%, #d4d0c8 100%);
+  border-radius: 8px;
+  overflow: hidden;
+}
+/* 머리·얼굴 전용 (비율 200×260, 눈·코·입·귀·이마) */
+.body-head-figure {
+  max-width: 180px;
+  aspect-ratio: 200 / 260;
+}
+.body-head-figure .body-svg.body-map-overlay {
+  aspect-ratio: 200 / 260;
+}
+.body-map-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  pointer-events: none;
+}
+.body-map-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+.body-map-overlay .body-hotspots {
+  pointer-events: auto;
+}
+.body-map-overlay .body-hotspot {
+  cursor: pointer;
+  transition: fill 0.2s ease;
+  pointer-events: auto;
+}
+.body-map-overlay .body-hotspot:hover {
+  fill: rgba(107, 142, 107, 0.3);
+}
+.body-map-overlay .body-hotspot.active {
+  fill: rgba(107, 142, 107, 0.4);
+}
+.body-svg {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  cursor: pointer;
+}
+.body-svg.body-map-overlay {
+  margin: 0;
+  max-width: none;
+}
+.body-svg .body-hotspot {
+  cursor: pointer;
+  transition: fill 0.2s ease;
+}
+.body-svg .body-hotspot:hover {
+  fill: rgba(107, 142, 107, 0.25);
+}
+.body-svg .body-hotspot.active {
+  fill: rgba(107, 142, 107, 0.35);
+}
+.body-map-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.body-column {
+  min-height: 320px;
+  background: transparent;
+  border: 1px solid #e5e2dc;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+.body-column-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  color: #999;
+  text-align: center;
+  padding: 1.5rem;
+}
+.body-column-placeholder .body-result-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+.body-column-placeholder p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.body-column-placeholder[aria-hidden="true"] {
+  display: none;
+}
+.body-disease-list-column {
+  position: relative;
+}
+.body-disease-list-column .disease-list.body-disease-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 480px;
+  overflow-y: auto;
+}
+.body-disease-list-column .disease-list.body-disease-list[aria-hidden="true"] {
+  display: none;
+}
+/* 스크롤 가능 영역 하단 그라데이션: 아래에 더 많은 증상이 있음을 표시 */
+.body-disease-list-column::after {
+  content: '';
+  position: absolute;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  right: 1.25rem;
+  height: 72px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.92));
+  pointer-events: none;
+  border-radius: 0 0 11px 11px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.body-disease-list-column:has(.body-disease-list:not([aria-hidden="true"]))::after {
+  opacity: 1;
+}
+.body-disease-list-column .disease-list.body-disease-list {
+  -webkit-overflow-scrolling: touch;
+}
+.body-dispensing-column .body-dispensing-area {
+  display: block;
+}
+.body-dispensing-column .body-dispensing-area[aria-hidden="true"] {
+  display: none;
+}
+.body-disease-desc {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: #555;
+}
+.body-herbs-rack {
+  margin-top: 0.5rem;
+}
+.body-formula-name {
+  margin: 1rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b8e6b;
+}
+.body-formula-name.body-formula-name-top {
+  margin: 0 0 0.75rem;
+  padding-top: 0;
+  border-top: none;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2d5a2d;
+}
+
+/* 제형 비교 버튼 — 제형 타입 바 우측 끝, 텍스트 + 밑줄 */
+.presc-compare-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  color: var(--ink-5);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--dur-base);
+}
+.presc-compare-btn:hover {
+  color: #000;
+}
+
+/* ══════════════════════════════════════
+   제형 비교 팝업
+   ══════════════════════════════════════ */
+.presc-detail-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.presc-detail-modal[aria-hidden="true"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.presc-detail-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20,14,8,0.62);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+.presc-compare-popup {
+  position: relative;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.32);
+  width: min(1160px, calc(100vw - 2rem));
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: prescDetailIn 0.28s cubic-bezier(0.22,1,0.36,1) both;
+  overflow: hidden;
+}
+@keyframes prescDetailIn {
+  from { opacity: 0; transform: scale(0.95) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.presc-compare-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 1.5rem 1rem;
+  border-bottom: 1px solid #e8e0d4;
+  flex-shrink: 0;
+}
+.presc-compare-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2c1e0e;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.presc-detail-close {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: rgba(0,0,0,0.07);
+  border-radius: 50%;
+  font-size: 1.1rem;
+  color: #555;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.presc-detail-close:hover { background: #000; color: #fff; }
+
+.presc-compare-scroll {
+  overflow: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ══════════════════════════════════════
+   대시보드 공통
+   ══════════════════════════════════════ */
+.presc-dashboard {
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+/* 제형별 컬러 변수 */
+.pcd-col-tang { --col-bg: #e8f4fc; --col-border: #4ca8d4; --col-text: #1a5a7a; --col-tag-bg: rgba(76,168,212,0.12); --col-tag-border: rgba(76,168,212,0.35); }
+.pcd-col-hwan { --col-bg: #fdf3e8; --col-border: #d48030; --col-text: #7a4010; --col-tag-bg: rgba(212,128,48,0.12);  --col-tag-border: rgba(212,128,48,0.35); }
+.pcd-col-san  { --col-bg: #edf7ec; --col-border: #60a848; --col-text: #2a6018; --col-tag-bg: rgba(96,168,72,0.12);   --col-tag-border: rgba(96,168,72,0.35); }
+.pcd-col-go   { --col-bg: #f5edf8; --col-border: #a060c8; --col-text: #5a2880; --col-tag-bg: rgba(160,96,200,0.12);  --col-tag-border: rgba(160,96,200,0.35); }
+.pcd-col-dan  { --col-bg: #fceeed; --col-border: #c84848; --col-text: #7a1818; --col-tag-bg: rgba(200,72,72,0.12);   --col-tag-border: rgba(200,72,72,0.35); }
+
+/* ── 제형 카드 5개 ── */
+.pcd-cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.85rem;
+}
+
+.pcd-card {
+  border: 1.5px solid #e8e2d8;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgba(250, 249, 245, 0.5);
+}
+
+.pcd-card-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 1rem 0.85rem 0.9rem;
+  background: var(--col-bg);
+  border-bottom: 2px solid var(--col-border);
+  color: var(--col-text);
+  text-align: center;
+}
+.pcd-card-hanja-main {
+  font-family: 'Zhi Mang Xing', cursive;
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--col-text);
+}
+.pcd-card-name-sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  opacity: 0.65;
+  color: var(--col-text);
+}
+
+.pcd-card-img-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #e8e0d4;
+}
+.pcd-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.35s ease;
+}
+.pcd-card:hover .pcd-card-img { transform: scale(1.04); }
+
+.pcd-card-summary {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: #3a3028;
+  border-bottom: 1px solid #ede8e0;
+}
+
+.pcd-card-block {
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid #ede8e0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.pcd-block-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #a89878;
+}
+.pcd-block-text {
+  margin: 0;
+  font-size: 0.73rem;
+  line-height: 1.55;
+  color: #3a3028;
+}
+
+.pcd-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.pcd-tag {
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: var(--col-tag-bg);
+  border: 1px solid var(--col-tag-border);
+  color: var(--col-text);
+}
+@media (max-width: 900px) {
+  .pcd-cards { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .presc-compare-popup { border-radius: 14px; }
+  .presc-compare-title { font-size: 0.88rem; }
+  .pcd-cards { grid-template-columns: repeat(2, 1fr); }
+  .presc-dashboard { padding: 1rem 1rem 1.5rem; }
+  .pcd-matrix-row-label { font-size: 0.65rem; padding: 0.45rem 0.5rem; }
+  .pcd-mcell-label { display: none; }
+}
+
+/* Top 버튼: 우측 하단, 화살표, 스크롤 후에만 표시 */
+.top-btn {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 100;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  font-weight: 600;
+  color: #fff;
+  background: #2d2d2d;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.top-btn:hover {
+  background: #1a1a1a;
+  transform: scale(1.08);
+}
+.top-btn.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ══════════════════════════════════════
+   처방 탭 — 좌우 분리 레이아웃
+   ══════════════════════════════════════ */
+.presc-split-layout {
+  display: flex;
+  height: calc(100vh - var(--sticky-filter-top, 52px) - var(--presc-filter-h, 46px));
+  overflow: visible;
+}
+
+/* 좌측 3D 뷰어 컬럼 */
+.presc-left-col {
+  width: 320px;
+  min-width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border-right: 1px solid #e8e2d8;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 성별 전환 — 인물 우측 하단 오버레이, 기존 연결 토글 외형 + 부위 칩 색상 */
+.body3d-gender-toggle {
+  position: absolute;
+  right: 12px;
+  bottom: 52px;
+  z-index: 6;
+  display: inline-flex;
+  gap: 0;
+}
+.body3d-gender-btn {
+  padding: 7px 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #c8c0b4;
+  color: #888;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.body3d-gender-btn:first-child {
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+}
+.body3d-gender-btn:last-child {
+  border-radius: 0 8px 8px 0;
+}
+.body3d-gender-btn:hover:not(.body3d-gender-btn--active) {
+  background: rgba(240, 236, 227, 0.75);
+  color: #5a4a3a;
+}
+.body3d-gender-btn--active {
+  background: #e8e6e0;
+  color: #000;
+  border-color: #000;
+}
+
+/* 3D 캔버스 래퍼 — flex-grow로 남은 공간 채움 */
+.body3d-canvas-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+#body3d-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.body3d-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.body3d-loading.hidden { opacity: 0; }
+
+/* 선택된 부위 토스트 (말풍선) — 부위 칩과 동일 스타일, 하단에서 슬라이드업 */
+.body3d-selected-label {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 8px 13px;
+  border-radius: 20px;
+  border: 1px solid #000;
+  background: #000;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 12px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  white-space: nowrap;
+  z-index: 10;
+}
+.body3d-selected-label.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* 부위 칩 (필터 헤더 좌측 섹션) */
+.body3d-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 16px 10px 0;
+  flex-shrink: 0;
+  width: 320px;
+}
+.body3d-chips-label {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 0 10px 0 2px;
+  margin-right: 4px;
+  border-right: 1px solid #e8e2d8;
+  font-size: calc(var(--text-xs) + 2px);
+  font-weight: 600;
+  color: var(--ink-5);
+  letter-spacing: var(--ls-wide);
+  white-space: nowrap;
+}
+.body3d-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--r-pill);
+  border: 1px solid #bbb;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: calc(var(--text-xs) + 2px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-base), color var(--dur-base), border-color var(--dur-base);
+}
+.body3d-chip:hover { background: rgba(245, 245, 245, 0.5); border-color: #999; }
+.body3d-chip--active {
+  background: #e8e6e0;
+  color: #000;
+  border-color: #000;
+}
+
+/* 하단 힌트 */
+.body3d-hint {
+  margin: 0;
+  padding: 5px 12px 8px;
+  font-size: 0.68rem;
+  color: #445;
+  text-align: center;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* 우측 컬럼 — flex-grow */
+.presc-split-layout .presc-right-col {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* 모바일: 세로 스택 */
+@media (max-width: 700px) {
+  /* 필터 헤더: 모바일에서 세로 스택 */
+  .presc-filter-inner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0 1rem;
+  }
+  .body3d-chips {
+    width: auto;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 8px 0;
+    border-right: none;
+    border-bottom: 1px solid rgba(206, 206, 206, 0.4);
+  }
+  .body3d-chips::-webkit-scrollbar { display: none; }
+  .body3d-chip { flex-shrink: 0; }
+  .presc-type-bar {
+    border-left: none;
+    padding: 8px 0;
+    gap: 8px;
+  }
+  .presc-type-row { gap: 6px; }
+
+  .presc-split-layout {
+    flex-direction: column;
+    height: auto;
+  }
+  .presc-left-col {
+    width: 100%;
+    height: 280px;
+    min-width: unset;
+    border-right: none;
+    border-bottom: none;
+    position: relative;
+  }
+  .presc-split-layout .presc-right-col {
+    height: calc(100vh - 280px - var(--sticky-filter-top, 52px) - var(--presc-filter-h, 80px));
+    padding: 0;
+  }
+
+  .body3d-hint { display: none; }
+
+  .presc-filter-status {
+    padding-left: 12px;
+    padding-right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .presc-grid { padding: 0 12px 24px; }
+
+  /* ── 제형비교 팝업: 모바일 간략 버전 ── */
+  .presc-detail-modal {
+    padding: 0.5rem;
+  }
+  .presc-compare-popup {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 14px;
+  }
+  .presc-compare-popup-header {
+    padding: 0.85rem 1rem 0.75rem;
+  }
+  .presc-compare-title {
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+  .presc-dashboard {
+    padding: 0.85rem 0.85rem 1.25rem;
+  }
+  /* 1열 세로 스택 */
+  .pcd-cards {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+  /* 헤더(한자/이름)는 가로 정렬로 압축 */
+  .pcd-card-head {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 0.6rem;
+    padding: 0.7rem 0.9rem;
+  }
+  .pcd-card-hanja-main {
+    font-size: 1.8rem;
+  }
+  .pcd-card-name-sub {
+    font-size: 0.7rem;
+    opacity: 0.75;
+  }
+  /* 이미지·복용 방법·요약 본문 숨김 (간략 버전) */
+  /* 카드 구조: head(1) / img(2) / summary p(3) / 특성(4) / 복용(5) / 효능(6) */
+  .pcd-card-img-wrap,
+  .pcd-card-summary,
+  .pcd-card-block:nth-child(5) {
+    display: none;
+  }
+  .pcd-card-block {
+    padding: 0.55rem 0.9rem;
+    gap: 0.25rem;
+  }
+  .pcd-block-label {
+    font-size: 0.6rem;
+  }
+  .pcd-block-text {
+    font-size: 0.72rem;
+    line-height: 1.5;
+  }
+  .pcd-tag {
+    padding: 2px 6px;
+    font-size: 0.62rem;
+  }
+}
+

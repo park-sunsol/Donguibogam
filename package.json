@@ -1,0 +1,19 @@
+{
+  "name": "donguibogam-archive",
+  "private": true,
+  "scripts": {
+    "build-effect-data": "node scripts/build-effect-data-js.js",
+    "build-herbs-from-effect": "node scripts/build-herbs-from-effect.js",
+    "build-herb-origin": "node scripts/build-herb-origin.js",
+    "build-mediclassics-map": "node scripts/build-mediclassics-map.js",
+    "fetch-mediclassics-detail": "node scripts/fetch-mediclassics-detail.js",
+    "parse-mediclassics-html": "node scripts/parse-mediclassics-html.js",
+    "generate-donguibogam-texts": "node scripts/generate-default-donguibogam-texts.js",
+    "build-donguibogam-from-csv": "node scripts/build-donguibogam-from-csv.js",
+    "build-herb-english": "node scripts/build-herb-english-supplement.js"
+  },
+  "devDependencies": {
+    "iconv-lite": "^0.7.2",
+    "xlsx": "^0.18.5"
+  }
+}

@@ -1,0 +1,217 @@
+/* Header: 목록 탭 스크롤 시 상단 sticky 고정 */
+.header-glass {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  /* 검색창 접힘으로 높이가 바뀔 때 스크롤 앵커가 scrollY를 되튀기며 접힘/펼침이 반복되는 현상 완화 */
+  overflow-anchor: none;
+  background: rgba(248,246,240,0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: none;
+  border-bottom: 1px solid rgba(206,206,206,0.5);
+  box-shadow: none;
+}
+
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.5rem 1.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  transition: padding-bottom 0.3s ease;
+}
+.header-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+}
+.header-view-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.header-view-tabs .view-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0;
+  margin: 0;
+  border-bottom: none;
+}
+.header-view-tabs .view-tabs [role="tab"] {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-5);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: var(--ls-normal);
+  cursor: pointer;
+  transition: background var(--dur-base), color var(--dur-base);
+}
+.header-view-tabs .view-tabs [role="tab"]:hover {
+  background: rgba(240, 237, 232, 0.5);
+  color: #000;
+}
+.header-view-tabs .view-tabs [role="tab"][aria-selected="true"] {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+  font-weight: 700;
+}
+.header-logo-strip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 0.25rem 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  border-radius: 6px;
+}
+.header-logo-strip:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+.header-logo-strip:active {
+  transform: scale(0.98);
+}
+.header-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  margin-right: -4px;
+}
+.header-logo-img:last-child {
+  margin-right: 0;
+}
+@media (min-width: 480px) {
+  .header-logo-img { width: 32px; height: 32px; margin-right: -5px; }
+}
+
+.header-search {
+  width: 100%;
+  margin-top: 1rem;
+  overflow: hidden;
+  max-height: 200px;
+  opacity: 1;
+  overflow-anchor: none;
+  transition: max-height 0.35s ease, opacity 0.25s ease, margin-top 0.3s ease;
+}
+/* 스크롤 시 검색창 접힘 */
+body.list-search-hidden .header-search {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+body.list-search-hidden .header-inner {
+  padding-bottom: 0.5rem;
+}
+.header-search-wrap .header-search-inner {
+  position: relative;
+  width: 100%;
+}
+.header-search-input {
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  border: 1px solid var(--rule-3);
+  border-radius: var(--r-sm);
+  background: #fff;
+  backdrop-filter: blur(4px);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--ink-3);
+  transition: border-color var(--dur-base), background var(--dur-base);
+}
+.header-search-input::placeholder { color: var(--ink-6); }
+.header-search-input:hover {
+  border-color: #000;
+}
+.header-search-input:focus {
+  outline: none;
+  border-color: #000;
+  background: #fff;
+}
+.header-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 2l12 12M14 2L2 14' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.header-search-input::-webkit-search-cancel-button:hover {
+  opacity: 1;
+}
+.search-rotating-hint {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  font-size: 1rem;
+  color: var(--ink-5);
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+  background: transparent;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--rule-3);
+  transition: opacity 0.4s ease, border-color var(--dur-base);
+}
+.header-search-inner:hover .search-rotating-hint {
+  border-color: #000;
+}
+.search-rotating-hint.rolling-fade-out {
+  opacity: 0;
+}
+.header-search-inner.focused .search-rotating-hint {
+  display: none;
+}
+.search-rotating-hint.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* 가치 탭 출처 버튼 */
+.data-sources-anchor-btn {
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--ink-4);
+  cursor: pointer;
+  letter-spacing: var(--ls-normal);
+  transition: color var(--dur-base);
+  white-space: nowrap;
+  margin-left: auto;
+}
+.data-sources-anchor-btn:hover {
+  color: #000;
+}
