@@ -282,26 +282,50 @@
   function setCamStatus(msg, kind) {
     var el = document.getElementById('coach-cam-status');
     if (!el) return;
-    el.textContent = msg || '';
+    el.innerHTML = msg || ''; // <br> 등 줄바꿈 허용 (정적 문자열만 사용)
     el.className = 'coach-cam-status' + (kind ? ' coach-cam-status--' + kind : '');
+  }
+  /* 좌측 상단 '카메라 권한 미설정' 빨간 띠 배너 토글 */
+  function setCamBanner(show) {
+    var b = document.getElementById('herb-game-cam-banner');
+    if (b) b.setAttribute('aria-hidden', show ? 'false' : 'true');
+  }
+  /* 권한 상태에 따라 배너 노출 갱신 — 모바일은 카메라 미사용이라 항상 숨김 */
+  function refreshCameraPermissionUI() {
+    if (isMobileDevice()) { setCamBanner(false); return; }
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'camera' }).then(function (st) {
+        setCamBanner(st.state !== 'granted');
+        st.onchange = function () { setCamBanner(st.state !== 'granted'); };
+      }).catch(function () {
+        /* permissions API 미지원: 일단 배너 노출 → 카메라가 실제로 동작하면(onResults) 숨김 */
+        setCamBanner(true);
+      });
+    } else {
+      setCamBanner(true);
+    }
   }
   function requestCameraPermission() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setCamStatus('이 브라우저는 카메라 접근을 지원하지 않아요.', 'error');
       return;
     }
-    setCamStatus('카메라 권한을 요청하는 중…', null);
+    setCamStatus('카메라 권한을 확인하는 중…', null);
     navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
-      stream.getTracks().forEach(function (t) { t.stop(); }); // 권한 확인용이므로 즉시 정지
+      stream.getTracks().forEach(function (t) { t.stop(); }); // 확인용이므로 즉시 정지
       setCamStatus('카메라 권한이 허용됐어요! 처방하기를 눌러 시작하세요.', 'ok');
+      setCamBanner(false);
     }).catch(function (err) {
       var name = err && err.name;
       if (name === 'NotAllowedError' || name === 'SecurityError') {
-        setCamStatus('카메라가 차단돼 있어요. 주소창 왼쪽 자물쇠(또는 카메라) 아이콘을 눌러 "카메라 허용"으로 바꾼 뒤 새로고침해주세요.', 'error');
+        setCamStatus('카메라가 차단돼 있어요. 주소창 왼쪽 자물쇠(또는 카메라)<br>아이콘을 눌러 "카메라 허용"으로 바꾼 뒤 새로고침해주세요.', 'error');
+        setCamBanner(true);
       } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
         setCamStatus('연결된 카메라를 찾을 수 없어요.', 'error');
+        setCamBanner(true);
       } else {
-        setCamStatus('카메라 권한 요청에 실패했어요. 다시 시도해주세요.', 'error');
+        setCamStatus('카메라 권한 확인에 실패했어요. 다시 시도해주세요.', 'error');
+        setCamBanner(true);
       }
     });
   }
@@ -633,6 +657,7 @@
         hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.45 });
         hands.onResults(function (r) {
           if (!gameActive) return;
+          setCamBanner(false); // 프레임이 들어온다 = 카메라 권한 정상 → 배너 숨김
           /* 코치마크가 떠 있는 동안에는 손을 인식하지 않는다 — 잡기 상태도 초기화 */
           if (coachActive) {
             allHands = [];
@@ -3032,10 +3057,14 @@
 
     if (mobile) {
       /* 모바일: 웹캠/MediaPipe 우회 → 터치 폴백을 기본 입력으로 사용 */
+      setCamBanner(false);
       enableFallbackInput();
       gameLoop();
       return;
     }
+
+    /* 데스크톱: 권한 미설정이면 좌측 상단 빨간 배너 노출(카메라 동작 시 자동 숨김) */
+    refreshCameraPermissionUI();
 
     setupMediaPipe().then(function () {
       if (!gameActive) return;
@@ -3115,6 +3144,7 @@
 
   function stopGame() {
     gameActive = false;
+    setCamBanner(false); // 게임 종료 시 배너 숨김
     if (window.Sfx) { window.Sfx.stopLoop('boil'); window.Sfx.stopLoop('stir_bg'); window.Sfx.stopLoop('stir'); window.Sfx.stopLoop('clay_bg'); window.Sfx.stopLoop('clay_roll'); window.Sfx.stopLoop('dan_foil'); }  /* 배경음·휘젓기·굴리기·금박 정지 */
     if (animId) { cancelAnimationFrame(animId); animId = null; }
     if (mpCamera) { mpCamera.stop(); mpCamera = null; }

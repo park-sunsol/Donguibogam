@@ -736,6 +736,9 @@
   <!-- 웹캠 약재 조합 오버레이 (의원 롤플레이) -->
   <div id="herb-game-overlay" class="herb-game-overlay" aria-hidden="true">
 
+    <!-- 카메라 권한 미설정 안내 띠 배너 (좌측 상단) -->
+    <div id="herb-game-cam-banner" class="herb-game-cam-banner" aria-hidden="true" role="status">카메라 권한이 설정되어 있지 않아요</div>
+
     <!-- ① 게임 HUD 헤더 -->
     <div class="herb-game-hud">
       <!-- 중앙: 처방 타이틀 -->
@@ -936,7 +939,7 @@
           <div class="coach-hand-hint" aria-hidden="true">
             <img src="asset/prescription/hand.svg" alt="" class="coach-hand-svg" />
             <p class="coach-hand-caption">웹캠으로 손동작을 인식해요<br>카메라 접근 권한을 꼭 허용해주세요</p>
-            <button type="button" id="coach-cam-permission-btn" class="coach-cam-btn">카메라 권한 허용하기</button>
+            <button type="button" id="coach-cam-permission-btn" class="coach-cam-btn">카메라 권한설정 확인하기</button>
             <p id="coach-cam-status" class="coach-cam-status" aria-live="polite"></p>
           </div>
           <div class="coach-step">

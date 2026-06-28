@@ -1952,6 +1952,14 @@ body.herb-game-active {
   .coach-inner { padding: 40px 6%; }
   .coach-center { width: 100%; }
   .coach-center .coach-step { min-width: 0; max-width: 86vw; }
+  /* 모바일: 좌측 절대배치 해제 → 기존처럼 중앙 흐름으로 복원 */
+  .coach-hand-hint {
+    position: static;
+    transform: none;
+    width: auto;
+    max-width: none;
+    margin-bottom: 12px;
+  }
 }
 
 /* 코치마크 우측 상단 닫기(X) 버튼 */
@@ -1986,7 +1994,14 @@ body.herb-game-active {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
+  /* 데스크톱: 카메라 안내 클러스터를 좌측에 고정, 중앙엔 탕 달이기~처방하기만 남김 */
+  position: absolute;
+  left: 5%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 240px;
+  max-width: 26%;
 }
 .coach-hand-svg {
   width: 112px;
@@ -2082,10 +2097,32 @@ body.herb-game-active {
 }
 .coach-cam-status--ok { color: #7ee0a0; }
 .coach-cam-status--error { color: #ff9a9a; }
+
+/* 카메라 권한 미설정 안내 띠 배너 (좌측 상단) */
+.herb-game-cam-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  display: none;
+  padding: 8px 18px;
+  background: #d93636;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-bottom-right-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+.herb-game-cam-banner[aria-hidden="false"] { display: block; }
+
 /* 모바일은 웹캠이 아닌 터치로 진행 → 웹캠 안내 문구 숨김 */
 .herb-game-overlay.mobile-mode .coach-hand-caption,
 .herb-game-overlay.mobile-mode .coach-cam-btn,
 .herb-game-overlay.mobile-mode .coach-cam-status { display: none; }
+/* 모바일은 터치 진행 → 카메라 배너 미노출 */
+.herb-game-overlay.mobile-mode .herb-game-cam-banner { display: none !important; }
 @keyframes coachRecBlink {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.25; }
