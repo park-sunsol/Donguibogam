@@ -296,7 +296,12 @@
     if (navigator.permissions && navigator.permissions.query) {
       navigator.permissions.query({ name: 'camera' }).then(function (st) {
         setCamBanner(st.state !== 'granted');
-        st.onchange = function () { setCamBanner(st.state !== 'granted'); };
+        st.onchange = function () {
+          var granted = st.state === 'granted';
+          setCamBanner(!granted);
+          /* 차단→허용으로 바뀌면 새로고침 없이 카메라를 다시 켠다 */
+          if (granted && gameActive) startCameraTracking();
+        };
       }).catch(function () {
         /* permissions API 미지원: 일단 배너 노출 → 카메라가 실제로 동작하면(onResults) 숨김 */
         setCamBanner(true);
@@ -315,6 +320,7 @@
       stream.getTracks().forEach(function (t) { t.stop(); }); // 확인용이므로 즉시 정지
       setCamStatus('카메라 권한이 허용됐어요! 처방하기를 눌러 시작하세요.', 'ok');
       setCamBanner(false);
+      startCameraTracking(); // 새로고침 없이 즉시 웹캠 추적 시작
     }).catch(function (err) {
       var name = err && err.name;
       if (name === 'NotAllowedError' || name === 'SecurityError') {
@@ -676,6 +682,20 @@
   function sendFrame() {
     if (!gameActive || !hands) return Promise.resolve();
     return hands.send({ image: video });
+  }
+
+  /* 웹캠 추적 (재)시작 — 권한이 늦게 허용된 경우 새로고침 없이 카메라를 다시 켠다 */
+  function startCameraTracking() {
+    if (isMobileDevice() || !gameActive) return;
+    if (!window.Camera || !video) return;
+    return setupMediaPipe().then(function () {
+      if (!gameActive) return;
+      if (mpCamera) { try { mpCamera.stop(); } catch (e) {} mpCamera = null; }
+      mpCamera = new window.Camera(video, { onFrame: sendFrame, width: 640, height: 480 });
+      mpCamera.start();
+    }).catch(function (err) {
+      console.warn('camera (re)start failed', err);
+    });
   }
 
   /* ══════════════════════════════════════
