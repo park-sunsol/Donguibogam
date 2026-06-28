@@ -111,6 +111,10 @@
   right: 0;
   z-index: 3;
 }
+/* 스크롤 시 상단 고정 컴팩트 헤더(작은 이미지+국문명) — 모바일에서만 노출 */
+.herb-ingredient-header-info {
+  display: none;
+}
 .herb-ingredient-close {
   position: absolute;
   top: 0.75rem;
@@ -588,15 +592,49 @@
     position: relative;
     flex-shrink: 0;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     min-height: 2.75rem;
-    padding: 0.5rem 0.75rem 0 0;
+    padding: 0.5rem 0.75rem 0 1rem;
   }
   .herb-ingredient-popup-header .herb-ingredient-close {
     position: relative;
     top: 0;
     right: 0;
+    flex-shrink: 0;
+  }
+  /* 스크롤 전에는 숨김, 본문 이미지가 위로 사라지면(스크롤 시) 부드럽게 등장 */
+  .herb-ingredient-header-info {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    opacity: 0;
+    transform: translateY(-4px);
+    visibility: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  }
+  .herb-ingredient-popup.is-scrolled .herb-ingredient-header-info {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+  }
+  .herb-ingredient-header-thumb {
+    width: 2.1rem;
+    height: 2.1rem;
+    flex-shrink: 0;
+    border-radius: 7px;
+    object-fit: cover;
+    background: #e8e6e0;
+  }
+  .herb-ingredient-header-thumb[src=""] { display: none; }
+  .herb-ingredient-header-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .herb-ingredient-popup-scroll {
     flex: 1;

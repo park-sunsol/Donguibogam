@@ -1142,16 +1142,21 @@ body:has(#body-view[aria-hidden="false"]) main {
   }
   .presc-mobile-block-title {
     margin: 0 0 0.7rem;
-    font-size: 1.6rem;
+    /* 폰 가로폭에 맞춰 크기 조절 + 한글은 단어 단위로만 줄바꿈(어절 중간 '있습니/다' 끊김 방지) */
+    font-size: clamp(1.2rem, 6.4vw, 1.6rem);
     font-weight: 400;
     color: #000;
     line-height: 1.35;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
   .presc-mobile-block-desc {
     margin: 0;
-    font-size: 1.02rem;
+    font-size: clamp(0.92rem, 4vw, 1.02rem);
     line-height: 1.6;
     color: #000;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
 
   /* 필터 헤더: 모바일에서 세로 스택 */

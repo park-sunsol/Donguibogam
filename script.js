@@ -4043,6 +4043,29 @@
     if (hanjaEl) hanjaEl.textContent = modalHanja;
     if (latinEl) latinEl.textContent = modalLatin;
     if (categoryEl) categoryEl.textContent = herb.category_detail ? '분류: ' + toModernKorean(herb.category_detail) : '';
+
+    /* 스크롤 시 노출되는 상단 컴팩트 헤더(작은 이미지+국문명) 갱신 */
+    var headerThumb = document.getElementById('herb-ingredient-header-thumb');
+    var headerName = document.getElementById('herb-ingredient-header-name');
+    if (headerThumb) {
+      if (thumbSrc && !useGlb) {
+        headerThumb.src = thumbSrc;
+        headerThumb.alt = modalName;
+        headerThumb.style.display = '';
+      } else {
+        headerThumb.removeAttribute('src');
+        headerThumb.style.display = 'none';
+      }
+    }
+    if (headerName) headerName.textContent = modalName;
+
+    /* 다른 약재로 전환/새로 열 때 항상 맨 위부터 보이도록 스크롤 리셋 */
+    var scroller = document.querySelector('#herb-ingredient-modal .herb-ingredient-popup-scroll');
+    if (scroller) scroller.scrollTop = 0;
+    var popupEl = document.querySelector('#herb-ingredient-modal .herb-ingredient-popup');
+    if (popupEl) popupEl.classList.remove('is-scrolled');
+    var similarListReset = document.getElementById('herb-ingredient-similar-list');
+    if (similarListReset) similarListReset.scrollLeft = 0;
     if (tagsEl) {
       tagsEl.innerHTML = '';
       tagsEl.classList.remove('herb-ingredient-tags--expanded');
@@ -4362,6 +4385,15 @@
     var nextNav = document.querySelector('.herb-ingredient-nav-next');
     if (prevNav) prevNav.addEventListener('click', function (e) { e.stopPropagation(); showPrevHerb(); });
     if (nextNav) nextNav.addEventListener('click', function (e) { e.stopPropagation(); showNextHerb(); });
+
+    /* 스크롤 내리면 상단 컴팩트 헤더(이미지+국문명) 노출 토글 */
+    var scroller = modal ? modal.querySelector('.herb-ingredient-popup-scroll') : null;
+    var popupEl = modal ? modal.querySelector('.herb-ingredient-popup') : null;
+    if (scroller && popupEl) {
+      scroller.addEventListener('scroll', function () {
+        popupEl.classList.toggle('is-scrolled', scroller.scrollTop > 56);
+      }, { passive: true });
+    }
   }
 
   /** body view의 증상 목록을 검색어·hotspot 선택에 맞게 갱신 */
