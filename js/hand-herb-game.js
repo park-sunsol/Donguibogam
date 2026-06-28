@@ -42,6 +42,7 @@
   var currentHerbObjs = [];
   var currentDoses = [];
   var gameActive = false;
+  var coachActive = false;  // 코치마크 표시 중 — true면 손동작 인식을 막는다
   var gameSession = 0;      // 매 startGame마다 증가 — stale setTimeout 차단용
   var completeFired = false; // 완료 트리거 중복 방지
   var grabState = { active: false, herbIdx: -1 };
@@ -266,10 +267,12 @@
      코치마크
      ══════════════════════════════════════ */
   function showCoach() {
+    coachActive = true; // 코치마크 표시 중에는 손동작 인식 차단
     var el = document.getElementById('herb-game-coach');
     if (el) el.setAttribute('aria-hidden', 'false');
   }
   function dismissCoach() {
+    coachActive = false; // 처방하기 등으로 코치마크가 사라지면 인식 시작
     var el = document.getElementById('herb-game-coach');
     if (el) el.setAttribute('aria-hidden', 'true');
   }
@@ -630,6 +633,13 @@
         hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.45 });
         hands.onResults(function (r) {
           if (!gameActive) return;
+          /* 코치마크가 떠 있는 동안에는 손을 인식하지 않는다 — 잡기 상태도 초기화 */
+          if (coachActive) {
+            allHands = [];
+            handLandmarks = null;
+            if (grabState.active) { grabState.active = false; grabState.herbIdx = -1; }
+            return;
+          }
           allHands = r.multiHandLandmarks || [];
           handLandmarks = (allHands.length > 0) ? allHands[0] : null;
           if (!handLandmarks && grabState.active) { grabState.active = false; grabState.herbIdx = -1; }
