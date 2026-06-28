@@ -1997,11 +1997,11 @@ body.herb-game-active {
   margin-bottom: 0;
   /* 데스크톱: 카메라 안내 클러스터를 좌측에 고정, 중앙엔 탕 달이기~처방하기만 남김 */
   position: absolute;
-  left: 5%;
+  left: 4%;
   top: 50%;
   transform: translateY(-50%);
-  width: 240px;
-  max-width: 26%;
+  width: 340px;
+  max-width: 32%;
 }
 .coach-hand-svg {
   width: 112px;
@@ -2051,10 +2051,12 @@ body.herb-game-active {
   font-size: 0.965rem;
   font-weight: 600;
   color: #ffd76a;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   line-height: 1.9;
   margin: 0;
   text-align: center;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 .coach-hand-caption::before {
   content: '';
@@ -2083,17 +2085,20 @@ body.herb-game-active {
 }
 .coach-cam-btn:hover {
   background: rgba(255, 215, 106, 0.26);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  /* '처방하기' 버튼과 동일하게 살짝 커지는 hover */
+  transform: scale(1.05) translateY(-1px);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
 }
 .coach-cam-status {
   margin: 0;
   min-height: 1.1em;
-  max-width: 320px;
+  max-width: 340px;
   text-align: center;
   font-size: 0.82rem;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.75);
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 .coach-cam-status--ok { color: #7ee0a0; }
 .coach-cam-status--error { color: #ff9a9a; }
