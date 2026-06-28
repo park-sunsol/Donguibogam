@@ -285,6 +285,11 @@
     el.innerHTML = msg || ''; // <br> 등 줄바꿈 허용 (정적 문자열만 사용)
     el.className = 'coach-cam-status' + (kind ? ' coach-cam-status--' + kind : '');
   }
+  /* 차단 등 오류 안내가 남아 있으면 제거 (카메라가 정상 동작하기 시작했을 때) */
+  function clearCamStatusIfError() {
+    var el = document.getElementById('coach-cam-status');
+    if (el && el.className.indexOf('coach-cam-status--error') >= 0) setCamStatus('', null);
+  }
   /* 좌측 상단 '카메라 권한 미설정' 빨간 띠 배너 토글 */
   function setCamBanner(show) {
     var b = document.getElementById('herb-game-cam-banner');
@@ -299,8 +304,11 @@
         st.onchange = function () {
           var granted = st.state === 'granted';
           setCamBanner(!granted);
-          /* 차단→허용으로 바뀌면 새로고침 없이 카메라를 다시 켠다 */
-          if (granted && gameActive) startCameraTracking();
+          /* 차단→허용으로 바뀌면 안내 문구 제거 + 새로고침 없이 카메라 재시작 */
+          if (granted) {
+            setCamStatus('', null);
+            if (gameActive) startCameraTracking();
+          }
         };
       }).catch(function () {
         /* permissions API 미지원: 일단 배너 노출 → 카메라가 실제로 동작하면(onResults) 숨김 */
@@ -664,6 +672,7 @@
         hands.onResults(function (r) {
           if (!gameActive) return;
           setCamBanner(false); // 프레임이 들어온다 = 카메라 권한 정상 → 배너 숨김
+          clearCamStatusIfError(); // 이전 '차단' 안내가 남아 있으면 제거
           /* 코치마크가 떠 있는 동안에는 손을 인식하지 않는다 — 잡기 상태도 초기화 */
           if (coachActive) {
             allHands = [];
