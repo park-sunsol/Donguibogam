@@ -595,7 +595,11 @@
     justify-content: space-between;
     align-items: center;
     min-height: 2.75rem;
-    padding: 0.5rem 0.75rem 0 1rem;
+    padding: 0.6rem 0.75rem 0.6rem 1rem;
+  }
+  /* 스크롤 시에만 헤더 하단 구분선 — 본문과 시각적으로 분리 */
+  .herb-ingredient-popup.is-scrolled .herb-ingredient-popup-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
   .herb-ingredient-popup-header .herb-ingredient-close {
     position: relative;
@@ -609,6 +613,7 @@
     align-items: center;
     gap: 0.55rem;
     min-width: 0;
+    line-height: 1;
     opacity: 0;
     transform: translateY(-4px);
     visibility: hidden;
@@ -631,6 +636,7 @@
   .herb-ingredient-header-name {
     font-size: 1.05rem;
     font-weight: 700;
+    line-height: 1;
     color: #1a1a1a;
     white-space: nowrap;
     overflow: hidden;
