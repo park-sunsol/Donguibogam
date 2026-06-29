@@ -1968,6 +1968,16 @@ body.herb-game-active {
     width: auto;
     max-width: none;
     margin-bottom: 12px;
+    gap: 8px;
+  }
+  /* 손 그림·상태문구도 일반 흐름으로 복원 (데스크톱 absolute 해제) */
+  .coach-hand-svg {
+    position: static;
+    margin: 0;
+  }
+  .coach-cam-status {
+    position: static;
+    margin-top: 0;
   }
 }
 
@@ -2002,19 +2012,24 @@ body.herb-game-active {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   margin-bottom: 0;
-  /* 데스크톱: 카메라 안내 클러스터를 좌측에 고정, 중앙엔 탕 달이기~처방하기만 남김.
-     중앙 버블은 아래 '처방하기' 버튼 때문에 정중앙보다 (간격+버튼)/2 ≈ 37px 위에 위치 →
-     좌측 클러스터 중심도 그만큼 올려 중앙 버블과 높이를 맞춘다. */
+  /* 데스크톱: 좌측 고정. 손 그림(svg)·상태문구(status)는 절대배치로 빼서
+     중앙정렬 박스를 [제목][본문][버튼]으로 만들어 중앙·우측 컬럼과 높이를 일치시킨다. */
   position: absolute;
   left: 4%;
   top: 50%;
-  transform: translateY(calc(-50% - 37px));
-  width: 340px;
-  max-width: 32%;
+  transform: translateY(-50%);
+  width: 420px;
+  max-width: 34%;
 }
 .coach-hand-svg {
+  /* 중앙정렬 박스 위쪽에 띄움 — 제목 높이에 영향 주지 않게 absolute */
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  margin-left: -56px;   /* width 112 / 2 → 가로 중앙 */
+  margin-bottom: 10px;
   width: 112px;
   height: 140px;
   object-fit: contain;
@@ -2063,16 +2078,16 @@ body.herb-game-active {
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.02em;
-  margin: 4px 0 6px;
+  margin: 0 0 6px;       /* coach-title과 동일 */
   text-align: center;
 }
+/* 본문 타이포는 다른 영역(.coach-body)과 동일하게 맞춘다 (gold 색만 유지) */
 .coach-hand-caption {
   font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
-  font-size: 0.965rem;
-  font-weight: 600;
+  font-size: 0.975rem;
+  font-weight: 400;
   color: #ffd76a;
-  letter-spacing: 0.14em;
-  line-height: 1.9;
+  line-height: 1.6;
   margin: 0;
   text-align: center;
   word-break: keep-all;
@@ -2089,18 +2104,19 @@ body.herb-game-active {
   vertical-align: middle;
   animation: coachRecBlink 1.2s ease-in-out infinite;
 }
-/* 카메라 권한 허용 버튼 */
+/* 카메라 권한 버튼 — 크기는 '처방하기' 버튼과 동일, 색만 gold 테마 */
 .coach-cam-btn {
-  margin-top: 4px;
+  margin-top: 20px;      /* 중앙 컬럼의 본문↔처방하기 간격과 동일 */
   background: rgba(255, 215, 106, 0.14);
   color: #ffd76a;
-  border: 1.5px solid rgba(255, 215, 106, 0.6);
-  padding: 8px 22px;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border: 2px solid rgba(255, 215, 106, 0.6);
+  padding: 14px 52px;
+  border-radius: 10px;
+  font-size: 1.125rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
 }
 .coach-cam-btn:hover {
@@ -2110,9 +2126,13 @@ body.herb-game-active {
   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
 }
 .coach-cam-status {
-  margin: 0;
+  /* 버튼 아래에 절대배치 → 제목 정렬 계산(센터 박스)에서 제외 */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 12px;
   min-height: 1.1em;
-  max-width: 340px;
   text-align: center;
   font-size: 0.82rem;
   line-height: 1.5;
