@@ -2012,10 +2012,11 @@ body.herb-game-active {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
+  /* 본문(버블)↔버튼 간격을 중앙 컬럼(coach-center gap)과 동일하게 — svg/status는 absolute라 제외 */
+  gap: 20px;
   margin-bottom: 0;
   /* 데스크톱: 좌측 고정. 손 그림(svg)·상태문구(status)는 절대배치로 빼서
-     중앙정렬 박스를 [제목][본문][버튼]으로 만들어 중앙·우측 컬럼과 높이를 일치시킨다. */
+     중앙정렬 박스를 [버블(제목+본문)][버튼]으로 만들어 중앙·우측 컬럼과 높이를 일치시킨다. */
   position: absolute;
   left: 4%;
   top: 50%;
@@ -2106,7 +2107,7 @@ body.herb-game-active {
 }
 /* 카메라 권한 버튼 — 크기는 '처방하기' 버튼과 동일, 색만 gold 테마 */
 .coach-cam-btn {
-  margin-top: 20px;      /* 중앙 컬럼의 본문↔처방하기 간격과 동일 */
+  margin-top: 0;         /* 간격은 .coach-hand-hint의 gap(20px)으로 통일 */
   background: rgba(255, 215, 106, 0.14);
   color: #ffd76a;
   border: 2px solid rgba(255, 215, 106, 0.6);
@@ -2163,6 +2164,7 @@ body.herb-game-active {
 .herb-game-cam-banner[aria-hidden="false"] { display: block; }
 
 /* 모바일은 웹캠이 아닌 터치로 진행 → 웹캠 안내 문구 숨김 */
+.herb-game-overlay.mobile-mode .coach-hand-bubble,
 .herb-game-overlay.mobile-mode .coach-hand-title,
 .herb-game-overlay.mobile-mode .coach-hand-caption,
 .herb-game-overlay.mobile-mode .coach-cam-btn,
