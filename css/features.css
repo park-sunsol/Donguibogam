@@ -1848,6 +1848,15 @@ body.herb-game-active {
   top: 50%;
   transform: translateY(-50%);
   max-width: 240px;
+  /* 중앙(탕 달이기) 컬럼과 동일 간격 → 버블 높이 맞춤 */
+  gap: 20px;
+}
+/* 화살표를 '처방하기' 버튼과 같은 높이만큼 차지하게 해 좌우 버블 높이를 일치 */
+.coach-step--right .coach-arrow-down {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
 }
 .coach-step {
   display: flex;

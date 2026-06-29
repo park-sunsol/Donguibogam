@@ -326,7 +326,7 @@
     setCamStatus('카메라 권한을 확인하는 중…', null);
     navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
       stream.getTracks().forEach(function (t) { t.stop(); }); // 확인용이므로 즉시 정지
-      setCamStatus('카메라 권한이 허용됐어요! 처방하기를 눌러 시작하세요.', 'ok');
+      setCamStatus('카메라 권한이 허용되어있어요. 처방하기를 눌러 시작하세요.', 'ok');
       setCamBanner(false);
       startCameraTracking(); // 새로고침 없이 즉시 웹캠 추적 시작
     }).catch(function (err) {
