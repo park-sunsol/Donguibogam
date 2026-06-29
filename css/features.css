@@ -2004,11 +2004,13 @@ body.herb-game-active {
   align-items: center;
   gap: 8px;
   margin-bottom: 0;
-  /* 데스크톱: 카메라 안내 클러스터를 좌측에 고정, 중앙엔 탕 달이기~처방하기만 남김 */
+  /* 데스크톱: 카메라 안내 클러스터를 좌측에 고정, 중앙엔 탕 달이기~처방하기만 남김.
+     중앙 버블은 아래 '처방하기' 버튼 때문에 정중앙보다 (간격+버튼)/2 ≈ 37px 위에 위치 →
+     좌측 클러스터 중심도 그만큼 올려 중앙 버블과 높이를 맞춘다. */
   position: absolute;
   left: 4%;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(calc(-50% - 37px));
   width: 340px;
   max-width: 32%;
 }
@@ -2054,6 +2056,15 @@ body.herb-game-active {
 @keyframes coachPinchDot {
   0%, 100% { opacity: 0.9; }
   50%      { opacity: 0.45; }
+}
+.coach-hand-title {
+  font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  font-size: 1.5625rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  margin: 4px 0 6px;
+  text-align: center;
 }
 .coach-hand-caption {
   font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
@@ -2132,6 +2143,7 @@ body.herb-game-active {
 .herb-game-cam-banner[aria-hidden="false"] { display: block; }
 
 /* 모바일은 웹캠이 아닌 터치로 진행 → 웹캠 안내 문구 숨김 */
+.herb-game-overlay.mobile-mode .coach-hand-title,
 .herb-game-overlay.mobile-mode .coach-hand-caption,
 .herb-game-overlay.mobile-mode .coach-cam-btn,
 .herb-game-overlay.mobile-mode .coach-cam-status { display: none; }
